@@ -1,0 +1,21 @@
+# Recent Changes Index
+
+Purpose: route agents to the correct append-only change log for meaningful completed work.
+
+Use a workflow-specific log when a change affects behavior, public workflow semantics, canonical outputs, validation expectations, ownership boundaries, or future rerun/debugging decisions.
+
+## Logs
+
+- Social behavior analysis: `.agents/references/recent-changes-social-behavior-analysis.md`
+- Notebook figure workflows: `.agents/references/recent-changes-notebook-figure-workflows.md`
+- Video preprocessing and GUI: `.agents/references/recent-changes-video-preprocessing-gui.md`
+
+Do not log purely mechanical formatting, typo-only edits, or regenerated artifacts unless they change future agent behavior.
+
+## 2026-06-17 - Routed agent workflow setup
+
+- Slice goal: establish repo-specific agent routing, baseline coding guidance, references, and handoff logs from `setupAgents.md`.
+- Passes completed: inspected top-level docs, scripts, modules, notebooks, outputs, and existing `.agents/` structure; created compact routers and references.
+- What changed: added `AGENTS.md`, `coding.md`, workflow routers, semantic references, workflow logs, remaining-work trackers, and `scripts/sync_coding_doc.py`; expanded `.gitignore`.
+- Rerun implications: future agents should start from `AGENTS.md`, then `coding.md`, then `.agents/workflows/jlsocialbehavior-router.md`.
+- Validation performed: regenerated `coding.md` from `setupAgents.md`; checked sync equality; compiled the sync script; listed routed files and router references.

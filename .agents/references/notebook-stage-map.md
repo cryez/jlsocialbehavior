@@ -1,0 +1,32 @@
+# Notebook Stage Map
+
+Purpose: route notebook and figure work without reading entire notebooks first.
+
+Use this file for tasks involving `LarschAndBaier2018/*.ipynb`, `exampleAnalysis/*.ipynb`, figure composition, or notebook-specific reruns.
+
+## Workflow groups
+
+1. Historical paper reproduction
+   - Entry: `LarschAndBaier2018/2018_00_GenerateAllFigures.ipynb`.
+   - Related notebooks: `2018_BM_*` and `composeFigure*.ipynb`.
+   - Purpose: load analysis outputs, run panel-specific statistics/plots, compose final figures.
+
+2. Current example analyses
+   - Entries: `exampleAnalysis/ShoalingSelectionAnalysis_2025_slim_clean.ipynb`, history/QTL/cFos notebooks, size analysis notebooks.
+   - Purpose: selection-shoaling analysis, current data exploration, QTL/cFos examples, size summaries.
+
+3. Helper-backed notebook work
+   - Owners: `functions/notebookHelper.py`, `functions/plotFunctions_joh.py`, `functions/paperFigureProps.py`, `functions/vector_field_analysis.py`.
+   - Use helpers for repeated loading, statistics, vector fields, and plotting idioms.
+
+## Key outputs
+
+- Figure files in configured `output` locations.
+- Saved plots from `functions/vector_field_analysis.py`, including vector-field and attraction/thigmotaxis images.
+- Downstream tables loaded from `*_siSummary_epi*.csv`, `*MapData.npy`, and size files.
+
+## Navigation notes
+
+- Read `canonical-outputs.md` before changing notebook assumptions about generated file names or columns.
+- If a notebook contains reusable transformations, move them to the owning module only when the task requires a refactor.
+- For plot changes, render or inspect the resulting artifact before claiming success.
