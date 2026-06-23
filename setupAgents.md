@@ -569,6 +569,11 @@ Don't refactor things that aren't broken.
 Match existing style, even if you'd do it differently.
 If you notice unrelated dead code, mention it - don't delete it.
 
+When writing code:
+
+Add concise comments that help a human reader understand intent, assumptions, non-obvious logic, and workflow-sensitive behavior.
+Do not comment obvious statements or restate what the code already says.
+
 When your changes create orphans:
 
 Remove imports/variables/functions that YOUR changes made unused.

@@ -2,17 +2,17 @@
 
 Purpose: route notebook and figure work without reading entire notebooks first.
 
-Use this file for tasks involving `LarschAndBaier2018/*.ipynb`, `exampleAnalysis/*.ipynb`, figure composition, or notebook-specific reruns.
+Use this file for tasks involving `Analyses/*.ipynb`, `DeprecatedAnalyses/LarschAndBaier2018/*.ipynb`, figure composition, or notebook-specific reruns.
 
 ## Workflow groups
 
 1. Historical paper reproduction
-   - Entry: `LarschAndBaier2018/2018_00_GenerateAllFigures.ipynb`.
+   - Entry: `DeprecatedAnalyses/LarschAndBaier2018/2018_00_GenerateAllFigures.ipynb`.
    - Related notebooks: `2018_BM_*` and `composeFigure*.ipynb`.
    - Purpose: load analysis outputs, run panel-specific statistics/plots, compose final figures.
 
 2. Current example analyses
-   - Entries: `exampleAnalysis/ShoalingSelectionAnalysis_2025_slim_clean.ipynb`, history/QTL/cFos notebooks, size analysis notebooks.
+   - Entries: `Analyses/ShoalingSelectionAnalysis_2025_slim_clean.ipynb`, `Analyses/ShoalingSelectionAnalysis_2025History.ipynb`, `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb`, and `Analyses/size_data_analysis.ipynb`.
    - Purpose: selection-shoaling analysis, current data exploration, QTL/cFos examples, size summaries.
 
 3. Helper-backed notebook work

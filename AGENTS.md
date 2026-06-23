@@ -16,6 +16,7 @@ This repository uses a routed instruction system under `.agents/`. Start with th
 
 - Do not create, edit, or erase local files outside this repository.
 - Treat `coding.md` as required baseline behavior for every coding task.
+- For pipeline-understanding or documentation tasks, ground every claim in repository files, say what is unclear, and do not change existing analysis code or notebook code unless the user explicitly asks for code changes.
 - Prefer edits in `models/` and `functions/` over notebook or wrapper edits when fixing reusable behavior.
 - Keep notebooks and wrappers orchestration-thin; do not make them new sources of business logic.
 - Preserve canonical output names, schemas, stage order, and legacy variable names unless a deliberate migration requires changing them.

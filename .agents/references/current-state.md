@@ -8,14 +8,14 @@ Use this file when repo authority is unclear or a task touches legacy/migration 
 
 - This is a Python 3.6-era scientific analysis repository with notebooks, reusable modules, wrappers, GUI tools, and historical paper reproduction assets.
 - `readme.md` describes the historical Larsch and Baier 2018 analysis workflow and raw data source.
-- Current active analysis notebooks also live under `exampleAnalysis/`.
+- Current active analysis notebooks live under `Analyses/`.
 - `.agents/` now provides routing and handoff docs; `coding.md` is the baseline coding behavior file.
 
 ## Authority notes
 
 - `models/` and `functions/` are the authoritative reusable code layers.
 - `LarschAndBaier2018/` notebooks are historical workflow surfaces and should be changed carefully.
-- `exampleAnalysis/` notebooks are current analysis surfaces but should still avoid accumulating reusable logic.
+- `Analyses/` notebooks are current analysis surfaces but should still avoid accumulating reusable logic.
 - `playground/` and `obsolete/` contain experimental or legacy code; do not use them as authority unless directly targeted.
 - Directories such as `Lib/`, `DLLs/`, `conda-meta/`, `Tools/`, and `Library/` look like local environment artifacts, not project source.
 

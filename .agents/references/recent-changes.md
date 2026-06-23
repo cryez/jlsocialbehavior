@@ -12,6 +12,13 @@ Use a workflow-specific log when a change affects behavior, public workflow sema
 
 Do not log purely mechanical formatting, typo-only edits, or regenerated artifacts unless they change future agent behavior.
 
+## 2026-06-23 - Baseline code comment guidance
+
+- Slice goal: require future agents to write human-readable comments with their code.
+- What changed: added baseline guidance in `setupAgents.md` to comment intent, assumptions, non-obvious logic, and workflow-sensitive behavior while avoiding obvious restatements; regenerated `coding.md`.
+- Rerun implications: future coding tasks should include concise explanatory comments where they improve human readability.
+- Validation performed: regenerated `coding.md` from `setupAgents.md`.
+
 ## 2026-06-17 - Routed agent workflow setup
 
 - Slice goal: establish repo-specific agent routing, baseline coding guidance, references, and handoff logs from `setupAgents.md`.
