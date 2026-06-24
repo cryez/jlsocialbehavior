@@ -2,6 +2,38 @@
 
 Append meaningful completed changes here.
 
+### 2026-06-23 - 2h experiment progression plot
+
+- Slice goal: Add a per-experiment 2h shoaling-index progression plot to `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb`.
+- Passes completed: Inserted a new notebook section immediately after the existing full-window progression plot.
+- What changed: Summarized `df_plot` rows with `condition_key == '2h'` by experiment, episode type, and 5-minute episode number; plotted one subplot per experiment with bout and linear trajectories overlaid; saved `attraction_progression_2026_2h_by_experiment.pdf`.
+- Rerun implications: No pipeline rerun required; rerun the notebook plot cells after summaries are loaded to generate the new PDF.
+- Validation performed: Parsed the edited notebook as JSON and reviewed the targeted notebook diff.
+
+### 2026-06-23 - 2h progression marker and comments
+
+- Slice goal: Make the per-experiment 2h progression cell easier to understand and edit.
+- Passes completed: Added explanatory comments throughout the plotting cell and a single editable `REFERENCE_MINUTE` setting.
+- What changed: Added a red dotted vertical reference line at minute 60 to every experiment subplot.
+- Rerun implications: No pipeline rerun required; rerun the notebook plot cell to refresh the displayed figure and saved PDF.
+- Validation performed: Parsed the edited notebook as JSON and inspected the updated cell source.
+
+### 2026-06-23 - Progression SD bands
+
+- Slice goal: Use standard deviation bands instead of SEM bands for shoaling-index progression plots.
+- Passes completed: Updated the full-window progression plot and the 2h per-experiment progression grid.
+- What changed: Replaced `sem_si` summary columns with `sd_si=('si', 'std')` and changed shaded bands to `mean_si +/- sd_si`.
+- Rerun implications: No pipeline rerun required; rerun the affected plot cells to refresh displayed outputs and saved PDFs.
+- Validation performed: Parsed the edited notebook as JSON and checked executable source for remaining `sem_si` references.
+
+### 2026-06-23 - Revert progression bands to SEM
+
+- Slice goal: Restore standard-error bands for shoaling-index progression plots.
+- Passes completed: Updated the full-window progression plot and the 2h per-experiment progression grid.
+- What changed: Replaced `sd_si=('si', 'std')` with `sem_si=('si', sem)` and changed shaded bands back to `mean_si +/- sem_si`.
+- Rerun implications: No pipeline rerun required; rerun the affected plot cells to refresh displayed outputs and saved PDFs.
+- Validation performed: Parsed the edited notebook as JSON and checked the progression source for `sem_si` aggregation and band references.
+
 ### 2026-06-19 - Active notebook path routing
 
 - Slice goal: Align notebook workflow routing with the current `Analyses/` notebook layout.
