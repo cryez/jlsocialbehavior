@@ -23,6 +23,7 @@ This repository uses a routed instruction system under `.agents/`. Start with th
 - Fix data semantics at the writer stage, not by compensating in downstream consumers.
 - Do not treat `playground/`, `obsolete/`, or embedded environment directories as authoritative unless the user directly targets them.
 - Validate after edits with the smallest relevant smoke, contract, rerun, or artifact check.
+- For new analysis notebooks or helpers, add a compact entry to the relevant `.agents/references/recent-changes-*.md` log and update routing docs only when a future agent would need the new entrypoint.
 
 ## Reference files
 

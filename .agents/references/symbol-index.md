@@ -29,6 +29,7 @@ Use this file when choosing the narrowest code owner before editing.
 - `functions.notebookHelper.readExperiment`: notebook-facing experiment loading helper.
 - `functions.notebookHelper.savedCsvToDf`: aggregation of saved summary CSVs.
 - `functions.notebookHelper.computeExpTimeOfDay`, `cohend`, `groupCohen`, `groupPower`: notebook statistics/time helpers.
+- `functions.carryover_effects`: raw animal-stimulus distance extraction, 1-minute shifted-control shoaling index, and plotting helpers for `Analyses/ShoalingCarryoverRawASD_2026.ipynb`.
 - `functions.video_functions.get_pixel_scaling`: video/ROI-derived scale owner.
 - `functions.video_functions.extract_frames_ffmpeg`: ffmpeg frame extraction owner.
 - `functions.video_functions.getAnimalLength`, `getAnimalSize`: animal size from frame/video owner.
