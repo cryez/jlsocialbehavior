@@ -2,6 +2,14 @@
 
 Append meaningful completed changes here.
 
+### 2026-06-30 - Mixed/separate start-date filter
+
+- Slice goal: Move the mixed-vs-separate notebook experiment date filter into the top settings cell.
+- Passes completed: Added `FILTER_START_DATE = '2026-01-01'` and changed metadata filtering to include experiments dated on or after that cutoff.
+- What changed: `Analyses/ShoalingMixedvsSeparateDotEpisodes.ipynb` now uses `info_filtered` for processing-table construction instead of the hard-coded 2026 year filter.
+- Rerun implications: Rerun the notebook from the settings and metadata cells after changing `FILTER_START_DATE`; no pipeline rerun is required just to validate the source change.
+- Validation performed: Parsed the notebook JSON, checked all code-cell syntax, confirmed stale 2026 filter source patterns are gone, and confirmed `prepare_processing_table` receives `info_filtered`.
+
 ### 2026-06-29 - QTL SI correlation annotation overlap
 
 - Slice goal: Remove the hidden/stacked label under the `R^2` annotation in the lineSet-split SI correlation grid.
