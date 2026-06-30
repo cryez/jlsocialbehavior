@@ -2,6 +2,62 @@
 
 Append meaningful completed changes here.
 
+### 2026-06-29 - QTL SI correlation annotation overlap
+
+- Slice goal: Remove the hidden/stacked label under the `R^2` annotation in the lineSet-split SI correlation grid.
+- Passes completed: Added a local genotype list for the grid and offset each per-genotype `R^2` label vertically inside `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb`.
+- What changed: Multiple genotype annotations no longer draw at the exact same axes position; when more than one genotype is plotted, each `R^2` label is prefixed by genotype.
+- Rerun implications: No data rerun required; rerun the lineSet correlation cell to refresh the displayed output.
+- Validation performed: Parsed the notebook JSON, checked all notebook code cells with Python `ast` after skipping IPython magic lines, and smoke-rendered the lineSet plotting cell on dummy two-genotype data to confirm each panel has separated `R^2` label positions.
+
+### 2026-06-29 - QTL SI correlations by lineSet thresholds
+
+- Slice goal: Make the lineSet-split SI correlation plot run without depending on the preceding plot cell and draw red dotted threshold guides.
+- Passes completed: Removed the `previous_corr_axis_limits` dependency from `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb` and hard-coded the grid thresholds locally.
+- What changed: The lineSet grid now plots shoaling index against average speed, animal size, and thigmotaxis distance; average-speed panels draw red dotted guides at `1` and `10`, and thigmotaxis panels draw red dotted guides at `10` and `30`.
+- Rerun implications: No data rerun required; rerun the lineSet correlation cell to refresh the displayed output.
+- Validation performed: Parsed the notebook JSON, checked all notebook code cells with Python `ast` after skipping IPython magic lines, and smoke-ran the lineSet plotting cell alone on dummy data with a noninteractive Matplotlib backend.
+
+### 2026-06-29 - QTL lineSet correlation x-axis range
+
+- Slice goal: Set the lineSet-split correlation plot x-axis range to `-0.2` through `1`.
+- Passes completed: Added a shared `ax.set_xlim(-0.2, 1)` inside the lineSet subplot loop in `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb`.
+- What changed: Each panel in the lineSet grid created after the original AvgSpeed correlation plot now uses the same fixed x-axis limits; the mistaken limit on the later genotype correlation grid was removed.
+- Rerun implications: No data rerun required; rerun the affected plotting cell to refresh the display.
+- Validation performed: Parsed the notebook JSON and checked all notebook code cells with Python `ast` after skipping IPython magic lines.
+
+### 2026-06-29 - QTL speed correlations by lineSet
+
+- Slice goal: Add a lineSet-split version of the three-panel speed correlation plot in `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb`.
+- Passes completed: Inserted a new markdown/code cell immediately after the original speed-correlation plot.
+- What changed: The notebook now plots one row per `lineSet` and one column for each original comparison: speed versus shoaling index, animal size, and thigmotaxis distance.
+- Rerun implications: No data rerun required; rerun the original correlation cell and the new cell to refresh the displayed grid.
+- Validation performed: Parsed the notebook JSON and checked all notebook code cells with Python `ast` after skipping IPython magic lines.
+
+### 2026-06-29 - QTL single-genotype plot palette
+
+- Slice goal: Remove the fake genotype color from cell 33 of `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb` while preserving the F2 plot color.
+- Passes completed: Replaced the two-entry palette with a single F2 palette and explicit `genotype_hue_order`.
+- What changed: The point and swarm plots now both use `hue_order=['F2']` and `palette={'F2': "#1F77B4"}`.
+- Rerun implications: No data rerun required; rerun cell 33 to refresh the displayed plot.
+- Validation performed: Parsed the notebook JSON and smoke-tested the one-genotype seaborn point/swarm palette pattern on dummy data.
+
+### 2026-06-26 - 2h vs 4h plot color settings
+
+- Slice goal: Add editable plot color settings to `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb`.
+- Passes completed: Inserted a plot color block at the top of the Settings cell and routed episode, genotype, reference-line, cutoff-line, baseline, and SEM-band colors through it.
+- What changed: Progression plots now use named settings for episode palettes, one-hour markers, 24-episode cutoffs, zero baselines, and shaded error-band alpha values.
+- Rerun implications: No data rerun required; rerun the setup/settings and plotting cells to refresh figures with edited colors.
+- Validation performed: Parsed the notebook JSON, checked all code-cell syntax with IPython magic lines skipped, and scanned for remaining hard-coded plot color literals outside the new settings block.
+
+### 2026-06-26 - Carryover plot color settings
+
+- Slice goal: Add editable plot color settings to `Analyses/ShoalingCarryoverRawASD_2026.ipynb`.
+- Passes completed: Inserted a plot color block at the top of the Settings cell and routed notebook-local line, SEM band, episode band, genotype, and reference-line colors through it.
+- What changed: `draw_lineplot_with_sem` now resolves colors from split-specific palettes for episode and genotype plots, while unsplit traces and zero reference lines use named settings.
+- Rerun implications: No data rerun required; rerun the setup/settings and plotting cells to refresh figures with edited colors.
+- Validation performed: Parsed the notebook JSON, checked all code-cell syntax with IPython magic lines skipped, and smoke-tested the plotting helper on dummy unsplit, episode-split, and genotype-split summaries.
+
 ### 2026-06-25 - 2h aggregate progression plot
 
 - Slice goal: Add an aggregate 2h-only shoaling-index progression plot to `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb`.
