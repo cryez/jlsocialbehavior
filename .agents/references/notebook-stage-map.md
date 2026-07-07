@@ -12,8 +12,8 @@ Use this file for tasks involving `Analyses/*.ipynb`, `DeprecatedAnalyses/Larsch
    - Purpose: load analysis outputs, run panel-specific statistics/plots, compose final figures.
 
 2. Current example analyses
-   - Entries: `Analyses/ShoalingSelectionAnalysis_2025_slim_clean.ipynb`, `Analyses/ShoalingSelectionAnalysis_2025History.ipynb`, `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb`, `Analyses/ShoalingCarryoverRawASD_2026.ipynb`, `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb`, and `Analyses/size_data_analysis.ipynb`.
-   - Purpose: selection-shoaling analysis, current data exploration, raw ASD/carryover checks, QTL/cFos examples, size summaries.
+   - Entries: `Analyses/ShoalingSelectionAnalysis_2025_slim_clean.ipynb`, `Analyses/ShoalingSelectionAnalysis_2025History.ipynb`, `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb`, `Analyses/ShoalingNeighborhoodMaps_2026.ipynb`, `Analyses/ShoalingCarryoverRawASD_2026.ipynb`, `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb`, and `Analyses/size_data_analysis.ipynb`.
+   - Purpose: selection-shoaling analysis, current data exploration, neighborhood-map summaries, raw ASD/carryover checks, QTL/cFos examples, size summaries.
 
 3. Helper-backed notebook work
    - Owners: `functions/notebookHelper.py`, `functions/carryover_effects.py`, `functions/plotFunctions_joh.py`, `functions/paperFigureProps.py`, `functions/vector_field_analysis.py`.

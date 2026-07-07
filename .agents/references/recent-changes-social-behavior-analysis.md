@@ -2,6 +2,14 @@
 
 Append meaningful completed changes here.
 
+### 2026-07-06 - Neighborhood map histogram compatibility
+
+- Slice goal: Fix neighborhood-map generation under current NumPy for the optional `SaveNeighborhoodMaps` processing path.
+- Passes completed: Updated the neighborhood-density writer methods used by `experiment.saveExpData()` without changing notebook orchestration or `MapData.npy` axes.
+- What changed: Replaced removed `np.histogramdd(..., normed=True)` usage in `models/AnimalTimeSeriesCollection.py` with `density=True` and derived the normalization scale from `mapBins`.
+- Rerun implications: Rerun the neighborhood-map notebook processing cell for missing map outputs; existing valid `MapData.npy` files do not need migration.
+- Validation performed: Direct smoke check for `neighborMat()` and `neighborMat_filt()` against `np.histogramdd(..., density=True)` expected output.
+
 ### 2026-06-24 - Carryover extraction controls
 
 - Slice goal: Make raw carryover extraction easier to monitor and constrain it to the planned analysis subset.

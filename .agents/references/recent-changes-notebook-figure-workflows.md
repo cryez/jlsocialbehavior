@@ -2,6 +2,30 @@
 
 Append meaningful completed changes here.
 
+### 2026-07-07 - Neighborhood-map alternative grid row spacing
+
+- Slice goal: Prevent overlapping y-axis labels in the optional alternative-grouping neighborhood-map grids.
+- Passes completed: Updated `Analyses/ShoalingNeighborhoodMaps_2026.ipynb`.
+- What changed: `plot_group_summary` now accepts optional row padding for tight layout, and the final optional alternative-grouping cell uses larger row padding for the 24-row grid plots.
+- Rerun implications: No data rerun required; rerun the grouped-map plotting cells to refresh the displayed and saved PDFs.
+- Validation performed: Parsed the notebook JSON, checked all notebook code cells with Python `ast` after skipping IPython magic lines, and smoke-rendered `plot_group_summary` on dummy map data with `row_h_pad=2.8` while intercepting PDF writes.
+
+### 2026-07-06 - Neighborhood-map notebook cache isolation
+
+- Slice goal: Keep neighborhood-map summaries and maps in a notebook-specific processing cache instead of reusing slim-selection summary CSVs.
+- Passes completed: Updated `Analyses/ShoalingNeighborhoodMaps_2026.ipynb`, `documentation_cr/neighborhood_map_analysis.md`, and `USER_GUIDE.md`.
+- What changed: The notebook now points `ProcessingDir` and `processingSettings_neighborhood_maps.csv` to a `neighborhood_maps` subfolder, keeps `PROCESSING_MISSING_ONLY=True`, and removes the stale warning about slim summaries causing map skips.
+- Rerun implications: First neighborhood-map processing in the new cache regenerates summary CSVs and `MapData.npy` files for selected experiments; later runs with `MissingOnly=True` skip experiments whose notebook-specific summaries already exist.
+- Validation performed: Parsed notebook JSON, checked code-cell syntax, and statically checked cache paths, `PROCESSING_MISSING_ONLY`, and stale warning removal.
+
+### 2026-07-06 - Neighborhood-map notebook
+
+- Slice goal: Add a focused notebook and human guide for neighborhood-density map analysis using processed selection data.
+- Passes completed: Added `Analyses/ShoalingNeighborhoodMaps_2026.ipynb`, documented the workflow in `documentation_cr/neighborhood_map_analysis.md`, and linked the new entrypoint from `USER_GUIDE.md` and the notebook stage map.
+- What changed: The notebook can filter selected experiments by year, line, genotype, lineSet, or folder; discovers notebook-specific `*_siSummary*.csv` and `*MapData.npy` files; writes a separate map-specific processing settings CSV; loads neighbor-density maps; exports file/row/group summaries; and saves real, shifted-control, and difference map figures.
+- Rerun implications: Neighborhood-map summaries and `MapData.npy` files live in the notebook-specific processing cache; selected experiments can be rerun with `SaveNeighborhoodMaps = 1`.
+- Validation performed: Parsed the notebook JSON and checked all notebook code cells with Python `ast` after skipping IPython magic lines.
+
 ### 2026-06-30 - Mixed/separate start-date filter
 
 - Slice goal: Move the mixed-vs-separate notebook experiment date filter into the top settings cell.

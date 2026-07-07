@@ -527,6 +527,8 @@ Generated files are intentionally reused.
 
 If results look stale, check `ProcessingDir` first. Existing summary CSVs can be older than the notebook settings you are testing.
 
+`Analyses/ShoalingNeighborhoodMaps_2026.ipynb` is the exception for map generation: it uses a notebook-specific processing cache under the selection temp-processing folder, with `SaveNeighborhoodMaps = 1`. Its summary CSVs are generated for that workflow and are not read from the slim selection notebook cache.
+
 ## Other Repository Areas, More Briefly
 
 ### Historical analysis notebooks
@@ -535,7 +537,9 @@ If results look stale, check `ProcessingDir` first. Existing summary CSVs can be
 
 ### Vector-field analysis
 
-`functions/vector_field_analysis.py` is a larger helper-backed analysis pipeline for vector fields, neighborhood maps, bout maps, thigmotaxis, and attraction plots. It expects `*MapData.npy` and `*_siSummary*.csv` files. Since the active notebooks set `SaveNeighborhoodMaps = 0`, this is not part of their standard run.
+`functions/vector_field_analysis.py` is a larger helper-backed analysis pipeline for vector fields, neighborhood maps, bout maps, thigmotaxis, and attraction plots. It expects `*MapData.npy` and `*_siSummary*.csv` files. Since the main selection notebooks set `SaveNeighborhoodMaps = 0`, this is not part of their standard run.
+
+For a focused, editable neighborhood-map workflow, see `Analyses/ShoalingNeighborhoodMaps_2026.ipynb`. It writes its own summary CSVs and map arrays into a notebook-specific processing cache. The human-facing walkthrough is `documentation_cr/neighborhood_map_analysis.md`.
 
 ### Video preprocessing and GUI utilities
 
