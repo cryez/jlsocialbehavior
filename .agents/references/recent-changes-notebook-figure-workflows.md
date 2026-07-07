@@ -2,6 +2,22 @@
 
 Append meaningful completed changes here.
 
+### 2026-07-07 - Trajectory-grid genotype labels
+
+- Slice goal: Add each fish's genotype to the 5x7 raw trajectory grid.
+- Passes completed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`.
+- What changed: The notebook now loads the selection animal metadata workbook, maps plotted animal IDs to `AllAn.genotype`, prints the genotype vector, and adds a genotype line to each fish subplot title.
+- Rerun implications: No raw-data or summary rerun required; rerun the trajectory-grid notebook cells to refresh the displayed and saved PNG/PDF.
+- Validation performed: Parsed the notebook JSON, checked all notebook code cells with Python `ast`, and smoke-rendered the grid helper on dummy trajectories with genotype labels.
+
+### 2026-07-07 - Fast trajectory-grid notebook
+
+- Slice goal: Add an independent, frequently runnable 5x7 raw trajectory grid for selected 35-fish experiments.
+- Passes completed: Added `Analyses/ShoalingTrajectoryGrid_2026.ipynb` and registered it in the notebook stage map.
+- What changed: The notebook uses the slim selection `processingSettings.csv` as an experiment index, reads only requested raw x/y columns for a selected time window, caches parsed windows as compressed `.npz`, and saves 5x7 trajectory grids as PNG/PDF.
+- Rerun implications: No summary or neighborhood-map rerun required; rerun the new notebook after editing experiment selection, time window, stride, or cache controls.
+- Validation performed: Parsed the notebook JSON and checked all notebook code cells with Python `ast`.
+
 ### 2026-07-07 - Neighborhood-map alternative grid row spacing
 
 - Slice goal: Prevent overlapping y-axis labels in the optional alternative-grouping neighborhood-map grids.
