@@ -2,6 +2,46 @@
 
 Append meaningful completed changes here.
 
+### 2026-07-09 - Speed distribution zMAD guides
+
+- Slice goal: Replace percentile guides in the trajectory-grid speed distribution plot with robust outlier thresholds.
+- Passes completed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`.
+- What changed: The final speed-distribution cell now computes the mean speeds corresponding to movement `zMAD = +3` and `zMAD = -3` from `distance_per_min`, converts them to mm/s, and draws those values as horizontal dotted guide lines instead of 95th-percentile markers.
+- Rerun implications: No pipeline rerun required; rerun the movement heatmap/metrics cell and final speed-distribution cell to refresh the displayed and saved figure.
+- Validation performed: Parsed the notebook JSON, confirmed stale speed-cell percentile references are absent, and syntax/smoke-checked the edited speed plot cell.
+
+### 2026-07-09 - Seaborn speed distribution cleanup
+
+- Slice goal: Use seaborn to simplify the individual speed distribution plot in the trajectory-grid notebook.
+- Passes completed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`.
+- What changed: Added `seaborn` to the notebook imports, replaced the manual jittered scatter/color loop with `sns.stripplot`, retained Matplotlib percentile annotations, and moved genotype sample counts onto the x-axis labels.
+- Rerun implications: No pipeline rerun required; rerun the import/settings cell and final speed-distribution cell after `movement_metrics` exists.
+- Validation performed: Parsed the notebook JSON, compiled all code cells with Python `ast`, and smoke-executed the speed plot cell on synthetic `movement_metrics` with saving disabled.
+
+### 2026-07-09 - Trajectory-grid readability refactor
+
+- Slice goal: Make the trajectory-grid notebook easier to read by keeping plot logic inside the plot cells.
+- Passes completed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`.
+- What changed: Reduced the `## Helpers` code cell to the reused filename helper, inlined one-use trajectory loading, metadata mapping, trajectory-grid plotting, movement-heatmap plotting, and speed-plot logic into their owning notebook cells, and added step-by-step comments for human readers.
+- Rerun implications: No data rerun required; rerun the notebook cells to refresh displayed and saved figures.
+- Validation performed: Parsed the notebook JSON, compiled all code cells with Python `ast`, confirmed the removed one-use helper names are absent, and smoke-rendered the trajectory grid, movement heatmap grid, and speed plot on synthetic 35-fish data with saving disabled.
+
+### 2026-07-09 - Movement heatmap colorbar spacing
+
+- Slice goal: Move the movement heatmap grid colorbar outside the subplot grid.
+- Passes completed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`.
+- What changed: The heatmap grid now reserves a right margin and draws the shared colorbar in a dedicated outer figure axis instead of letting it consume or overlap subplot space.
+- Rerun implications: No data rerun required; rerun the movement heatmap cell to refresh the displayed and saved PNG/PDF.
+- Validation performed: Parsed the notebook JSON, compiled all code cells with Python `ast`, and smoke-rendered the heatmap helper to confirm the colorbar axis sits outside the grid axes.
+
+### 2026-07-09 - Individual speed distribution plot
+
+- Slice goal: Add a notebook-local plot of individual speed distribution colored by fish genotype.
+- Passes completed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`.
+- What changed: Appended a final inline code cell that uses the previous cell's `movement_metrics` table, plots one dot per fish grouped and colored by genotype, draws genotype-specific and overall 95th-percentile reference lines, and optionally saves PNG/PDF plus a speed table when `SAVE_FIGURES=True`.
+- Rerun implications: No pipeline rerun required; rerun the movement heatmap/metrics cell and the final speed-distribution cell to refresh the figure for a selected experiment/window.
+- Validation performed: Parsed the notebook JSON, compiled all code cells with Python `ast`, and smoke-rendered the new cell on dummy 35-fish trajectory data with a noninteractive Matplotlib backend.
+
 ### 2026-07-09 - Movement heatmap comments
 
 - Slice goal: Explain the trajectory movement heatmap analysis and its outlier metrics in-place.
