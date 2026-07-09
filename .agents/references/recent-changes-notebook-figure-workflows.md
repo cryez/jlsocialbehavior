@@ -2,6 +2,22 @@
 
 Append meaningful completed changes here.
 
+### 2026-07-09 - Movement heatmap comments
+
+- Slice goal: Explain the trajectory movement heatmap analysis and its outlier metrics in-place.
+- Passes completed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`.
+- What changed: Added notebook markdown and code comments defining the movement-density binning, shared color scale, `movement_z_mad` formula, `movement_z_mad_abs` ranking, and all displayed metrics-table columns.
+- Rerun implications: Documentation/comment-only change; rerun the movement heatmap cell only to view the clarified notebook text alongside refreshed outputs.
+- Validation performed: Parsed the notebook JSON and compiled all code cells with Python `ast`.
+
+### 2026-07-09 - Trajectory movement heatmap grid
+
+- Slice goal: Add an absolute movement-density heatmap version of the 5x7 trajectory grid for outlier individual screening.
+- Passes completed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`.
+- What changed: The notebook now bins frame-to-frame path length into shared-scale per-fish arena heatmaps, annotates each subplot with distance-per-minute and robust MAD z-score, displays a movement outlier table, and saves PNG/PDF heatmaps plus a metrics CSV.
+- Rerun implications: No raw-data or summary rerun required; rerun the trajectory-grid notebook cells after loading a trajectory window to refresh the displayed heatmap and saved movement metrics.
+- Validation performed: Parsed the notebook JSON, checked all notebook code cells with Python `ast`, and smoke-rendered the movement heatmap helper on dummy 35-fish trajectories with a deliberately high-movement outlier.
+
 ### 2026-07-07 - Trajectory-grid genotype labels
 
 - Slice goal: Add each fish's genotype to the 5x7 raw trajectory grid.
