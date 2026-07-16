@@ -2,6 +2,30 @@
 
 Append meaningful completed changes here.
 
+### 2026-07-15 - Multi-experiment LoomAnalysisCR notebook
+
+- Slice goal: Extend the legacy loom-response analyses from one recording to the 2026 shoaling-selection cohort while keeping experiments as equally weighted replicates.
+- Passes completed: Added `Analyses/LoomAnalysisCR.ipynb`; extended `functions/joh_loom_helpers.py` with metadata selection, condition-trial alignment, compact extraction, settings-validated per-experiment caches, and cross-experiment summaries.
+- What changed: The notebook dynamically selects the current eight 2026 experiments and presents legacy center-distance traces, legacy baseline/response metrics, trial-level velocity traces, trial maximum velocity versus experiment time, and trial maximum velocity by loom side. Dot-plot cells switch between experiment points and aligned condition/trial averages; trace plots always average experiments.
+- Rerun implications: The first run reads each selected raw `PositionTxt` recording and creates notebook-specific `csv.gz` caches plus JSON sidecars. Later runs reuse matching caches; set `FORCE_REPROCESS_RAW_DATA=True` to rebuild them deliberately.
+- Validation performed: Parsed and compiled all notebook cells, confirmed the live metadata filter selects eight 35-animal experiments with no missing raw paths, and smoke-tested unequal experiment weighting, trial alignment, cache reuse/invalidation, all five plots, both point modes, and averaged point counts with synthetic data. Full raw-recording processing was not run because continued NAS cache access was not authorized.
+
+### 2026-07-15 - Looming animal-response workflow registration
+
+- Slice goal: Register the new `CLfull...` loom-stimulus notebook and reusable helper module in the agentic documentation.
+- Passes completed: Added `Analyses/LoomingAnimalResponseAnalysis.ipynb` and `functions/joh_loom_helpers.py` to the notebook stage map and symbol index.
+- What changed: Documented the raw embedded-stimulus input, fixed epFrame-150 legacy alignment, no-L/R-mirroring convention, notebook analysis scope, helper ownership, and absence of canonical output files.
+- Rerun implications: No analysis rerun required; future agents should inspect the stage map and `functions/joh_loom_helpers.py` before changing loom workflow behavior.
+- Validation performed: Parsed the notebook structure and reviewed its headings/imports, inspected all helper entrypoints, and confirmed the documentation references the repository paths and symbols.
+
+### 2026-07-09 - Trajectory heatmap time occupancy
+
+- Slice goal: Change the trajectory-grid heatmap colors from distance traveled per bin to time spent per bin.
+- Passes completed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`.
+- What changed: The 5x7 heatmap now bins finite sampled x/y positions with `sample_seconds` weights, so colors show seconds spent per spatial bin while subplot labels and movement metrics still report distance-based speed and zMAD.
+- Rerun implications: No pipeline rerun required; rerun the movement heatmap/metrics cell to refresh the displayed and saved PNG/PDF/metrics outputs.
+- Validation performed: Parsed the notebook JSON, compiled notebook code cells with Python `ast`, and smoke-tested the heatmap cell on synthetic 35-fish trajectories to confirm stationary occupancy, seconds/bin labels, speed labels, and speed-metric columns.
+
 ### 2026-07-09 - Speed distribution zMAD guides
 
 - Slice goal: Replace percentile guides in the trajectory-grid speed distribution plot with robust outlier thresholds.

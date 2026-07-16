@@ -2,6 +2,22 @@
 
 Append meaningful completed changes here.
 
+### 2026-07-10 - Arena-use visualization additions
+
+- Slice goal: Show arena-use evenness in the trajectory heatmap labels and plot arena-use metrics by genotype.
+- Passes completed: Reordered the trajectory-grid notebook so arena-use metrics are computed before heatmap plotting, then added individual arena-evenness and occupancy-radius distribution plots.
+- What changed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`; canonical summary writers and model-layer analysis code are unchanged.
+- Rerun implications: Rerun the trajectory-grid notebook from heatmap preparation through the new arena-use plot cells to regenerate heatmap labels and plot exports.
+- Validation performed: Notebook JSON parsed, code cells compiled, and synthetic execution covered the reordered heatmap/evenness/plot path.
+
+### 2026-07-10 - Per-fish arena-use evenness notebook metric
+
+- Slice goal: Add a notebook-only screen for fish with biased arena use in the trajectory-grid workflow.
+- Passes completed: Added per-fish personal occupancy radius, normalized Shannon arena-use evenness, reachable coverage, and robust zMAD flags after the movement heatmap grid.
+- What changed: Updated `Analyses/ShoalingTrajectoryGrid_2026.ipynb`; canonical summary writers and model-layer analysis code are unchanged.
+- Rerun implications: Rerun the trajectory-grid notebook through the movement heatmap and new evenness cell to generate the `_arena_evenness.csv` table.
+- Validation performed: Notebook JSON parsed and metric smoke checks covered single-bin, uniform, radius-cap, and per-fish mask behavior.
+
 ### 2026-07-06 - Neighborhood map histogram compatibility
 
 - Slice goal: Fix neighborhood-map generation under current NumPy for the optional `SaveNeighborhoodMaps` processing path.
