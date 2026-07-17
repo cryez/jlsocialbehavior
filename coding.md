@@ -66,3 +66,13 @@ For multi-step tasks, state a brief plan:
 3. [Step] -> verify: [check]
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+5. Transparent Working Log
+
+Keep the user-facing working log accurate and complete while using commands or tools.
+
+Report every command or tool failure promptly, including failures that are transient or later resolved.
+For each failure, state what failed, the cause or best current diagnosis, and whether it affects the requested work.
+If you find a solution, report what changed and whether the retry or alternative validation succeeded.
+Distinguish errors from warnings and expected nonzero results so the user can judge their significance.
+Do not hide failed attempts behind a final successful result; preserve a clear account of how validation was reached.

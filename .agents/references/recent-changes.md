@@ -12,6 +12,13 @@ Use a workflow-specific log when a change affects behavior, public workflow sema
 
 Do not log purely mechanical formatting, typo-only edits, or regenerated artifacts unless they change future agent behavior.
 
+## 2026-07-16 - Transparent working-log guidance
+
+- Slice goal: make command failures and their resolution visible to users during agent work.
+- What changed: added baseline guidance requiring agents to report every command or tool failure, its cause or best diagnosis, its impact, and whether and how it was resolved.
+- Rerun implications: future tool-driven tasks should distinguish errors from warnings and keep failed attempts visible even when later validation succeeds.
+- Validation performed: regenerated `coding.md` from `setupAgents.md` and verified the generated file matches the source block.
+
 ## 2026-06-23 - Baseline code comment guidance
 
 - Slice goal: require future agents to write human-readable comments with their code.

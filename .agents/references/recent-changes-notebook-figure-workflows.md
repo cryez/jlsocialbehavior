@@ -2,6 +2,54 @@
 
 Append meaningful completed changes here.
 
+### 2026-07-16 - Selection-line mortality histograms by age
+
+- Slice goal: Compare mortality-record counts across one-month age classes for selection-line fish.
+- Passes completed: Extended `temp/fish_analyzes.ipynb` with fish-move filtering and three age histograms for all matching mortality records, overall-bad-shape sacrifices, and found-dead records.
+- What changed: The analysis reads the row-5 worksheet header, keeps lines containing `sel`, treats each retained row as one observation, and uses the crossing analysis `AGE_BIN_MONTHS` setting with shared age-bin edges across all three plots.
+- Rerun implications: Rerun the loading/settings and mortality cells after changing `AGE_BIN_MONTHS`, `SELECTION_LINE_TOKEN`, or `fish_database.xlsx`.
+- Validation performed: Parsed and compiled all 10 notebook code cells; executed the new section against the real workbook; confirmed 320 usable records (112 overall-bad-shape sacrifices and 208 found-dead records), zero invalid ages, shared one-month bins from 0 through 18 months, histogram totals matching the filtered rows, and readable rendered titles, axes, and bin labels for all three plots.
+
+### 2026-07-16 - Age-bin failure stacks by selection line
+
+- Slice goal: Refocus the stacked age-bin histogram from successful crossings to failed crossings.
+- Passes completed: Updated `temp/fish_analyzes.ipynb` to summarize failure proportions, stack each line's contribution to failures, and retain total-attempt sample-size labels.
+- What changed: Each segment is the line's failed crossings divided by all crossings in that age bin, so the full stack equals the bin's overall failure proportion; bins with attempts but no failures remain labeled empty slots.
+- Rerun implications: Rerun the settings, crossing-history, and age-bin cells after changing the bin width, crossing filters, or source workbook.
+- Validation performed: Parsed and compiled all notebook cells; executed the real workbook data with 126 eligible crosses, 27 failures across 11 lines, 12 age bins, and zero age/line ambiguities; confirmed stacks equal overall failure proportions, failure and success proportions are complementary, total-attempt labels are correct, three zero-failure bins remain visible, 30-day and 60-day widths work, ambiguous multi-line crosses are excluded, invalid widths fail, and the rendered plot and legend are readable.
+
+### 2026-07-16 - Age-bin success stacks by selection line
+
+- Slice goal: Keep age-bin bar heights equal to overall incross success while showing each selection line's contribution within the bars.
+- Passes completed: Updated the age-bin plot in `temp/fish_analyzes.ipynb` to retain one unambiguous line per cross, calculate line-specific success contributions, draw stacked colors, and label total cross attempts.
+- What changed: Each segment is the line's successful crossings divided by all crossings in that age bin, so the stack still equals the bin's overall success proportion; ambiguous multi-age or multi-line crosses are excluded and reported.
+- Rerun implications: Rerun the settings, crossing-history, and age-bin cells after changing the bin width, crossing filters, or source workbook.
+- Validation performed: Parsed and compiled all notebook cells; executed the real workbook data with 126 eligible crosses across 26 lines and zero age/line ambiguities; confirmed 23 lines with successes appear in the stack, stack totals equal overall success proportions, labels equal total attempts, 30-day and 60-day widths work, zero-success bins retain labeled empty slots, multi-line crosses are excluded, invalid widths fail, and the rendered plot and legend are readable.
+
+### 2026-07-16 - Age-binned incross success plot
+
+- Slice goal: Summarize crossing success as a function of fish age without splitting the result by selection line.
+- Passes completed: Extended `temp/fish_analyzes.ipynb` with a user-editable 30-day month bin width, cross-level age reduction, a bin summary table, and a histogram-style proportion plot.
+- What changed: The new plot pools the existing filtered selection-line cohort, counts each cross once, excludes crosses with multiple distinct known parent ages, and omits empty age classes rather than treating them as unsuccessful.
+- Rerun implications: Rerun the settings, crossing-history, and age-bin cells after changing `AGE_BIN_MONTHS`, another crossing filter, or the source workbook.
+- Validation performed: Parsed and compiled all notebook cells; executed the real workbook data through the new plot; confirmed 126 eligible unique crosses, zero multi-age exclusions, correct per-bin proportions, 30-day and 60-day widths, rejection of a zero-width setting, and readable rendered axes without line-based encoding.
+
+### 2026-07-16 - Incross success barplot by selection line
+
+- Slice goal: Plot crossing success percentages per selection line while excluding outcrosses.
+- Passes completed: Extended `temp/fish_analyzes.ipynb` with a seaborn barplot and line-level success summary.
+- What changed: The plot uses the editable `CROSSING_TYPE_FILTER` and `SELECTION_LINE_TOKEN` settings, maps `sel1`/`sel3` families including `TLSel GC` and `TL sel mid`, orders lines by family, and treats `0 (only males)` as an unsuccessful crossing while excluding missing success values.
+- Rerun implications: Rerun the settings, filtering, and plotting cells after changing either filter setting or the source workbook.
+- Validation performed: Compiled all notebook code cells, rendered the plot with a noninteractive Matplotlib backend, confirmed the default incross run yields 143 filtered records and 28 line summaries, and confirmed changing the type setting to `outcross` changes the result to 6 records and 4 summaries.
+
+### 2026-07-16 - Fish database loading notebook
+
+- Slice goal: Add a temporary notebook entrypoint for inspecting the two multi-sheet fish-information workbooks.
+- Passes completed: Added `temp/fish_analyzes.ipynb` with explicit workbook paths, all-sheet loading, missing-file validation, a worksheet shape summary, editable selection-line and crossing-type filters, and a filtered crossing-efficiency table.
+- What changed: The notebook loads `crosses.xlsx` and `fish_database.xlsx` into nested dictionaries of pandas DataFrames, reads the four-row-header `Crosses efficiency` sheet, filters rows whose male or female strain contains the configured selection token and whose crossing type matches the configured value, and summarizes selection lines with their tank IDs.
+- Rerun implications: Rerun the loading cell whenever either source workbook changes.
+- Validation performed: Parsed and syntax-checked the notebook, then executed the loading cell against both current workbooks.
+
 ### 2026-07-15 - Multi-experiment LoomAnalysisCR notebook
 
 - Slice goal: Extend the legacy loom-response analyses from one recording to the 2026 shoaling-selection cohort while keeping experiments as equally weighted replicates.
