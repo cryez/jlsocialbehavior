@@ -5,12 +5,17 @@ import json
 import os
 from pathlib import Path
 import re
+import warnings
 
 import numpy as np
 import pandas as pd
 
 
 LOOM_CACHE_SCHEMA_VERSION = 1
+
+
+class _NoLoomStimulusEpisodesError(ValueError):
+    """Signal that an otherwise readable experiment has no supported loom episodes."""
 
 
 STIMULUS_COLUMNS = [
@@ -642,6 +647,7 @@ def collect_or_load_loom_analysis_data(
     processing_dir.mkdir(parents=True, exist_ok=True)
     table_names = ("center_traces", "response_metrics", "trial_velocity", "trial_max_velocity")
     parts = {name: [] for name in table_names}
+    valid_experiment_count = 0
 
     for row_number, row in experiments.reset_index(drop=True).iterrows():
         experiment = str(row.get("experiment", row.get("folder", row_number)))
@@ -680,20 +686,28 @@ def collect_or_load_loom_analysis_data(
                 f"{experiment} ({reason})",
                 flush=True,
             )
-            tables = _process_loom_experiment(
-                row,
-                onset_in_block,
-                pre_frames,
-                post_frames,
-                baseline_frames,
-                response_frames,
-                velocity_frame_start,
-                velocity_frame_end,
-                velocity_step_frames,
-                fps,
-                units_per_mm,
-                max_velocity_window_frames,
-            )
+            try:
+                tables = _process_loom_experiment(
+                    row,
+                    onset_in_block,
+                    pre_frames,
+                    post_frames,
+                    baseline_frames,
+                    response_frames,
+                    velocity_frame_start,
+                    velocity_frame_end,
+                    velocity_step_frames,
+                    fps,
+                    units_per_mm,
+                    max_velocity_window_frames,
+                )
+            except _NoLoomStimulusEpisodesError as error:
+                warnings.warn(
+                    f"Skipping loom experiment {experiment}: {error}",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                continue
             for name in table_names:
                 tables[name].to_csv(cache_paths[name], index=False, compression="gzip")
             with cache_paths["settings"].open("w", encoding="utf-8") as stream:
@@ -701,6 +715,10 @@ def collect_or_load_loom_analysis_data(
 
         for name in table_names:
             parts[name].append(tables[name])
+        valid_experiment_count += 1
+
+    if valid_experiment_count == 0:
+        raise ValueError("No usable loom experiments remain after skipping experiments without CLfull episodes.")
 
     return {
         name: pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
@@ -767,9 +785,11 @@ def _process_loom_experiment(
     animals = load_animal_file(row["txt_path"], n_animals=n_animals)
     stimulus = embedded_stimulus_from_animal_file(animals)
     trials = loom_trials(stimulus)
+    if trials.empty:
+        raise _NoLoomStimulusEpisodesError("no CLfull loom stimulus episodes were found.")
     trials = trials.loc[trials["episode"].astype(str).str.match(r"^CLfull\d{3}[LR]")].copy()
     if trials.empty:
-        raise ValueError(f"{experiment}: no CLfull loom trials were found.")
+        raise _NoLoomStimulusEpisodesError("no CLfull loom stimulus episodes were found.")
     trials = add_condition_trial_index(trials)
 
     snippets = extract_legacy_loom_snippets(
