@@ -32,7 +32,8 @@ Use this file when choosing the narrowest code owner before editing.
 - `functions.carryover_effects`: raw animal-stimulus distance extraction, 1-minute shifted-control shoaling index, and plotting helpers for `Analyses/ShoalingCarryoverRawASD_2026.ipynb`.
 - `functions.joh_loom_helpers.load_animal_file`, `embedded_stimulus_from_animal_file`, `stimulus_blocks`, `loom_trials`: raw animal-file loading and `CLfull...` closed-loop loom block/trial parsing for `Analyses/LoomingAnimalResponseAnalysis.ipynb`.
 - `functions.joh_loom_helpers.extract_loom_snippets`, `extract_legacy_loom_snippets`, `legacy_loom_response_metrics`: loom-window extraction, legacy coordinate alignment, and raw baseline/response escape metrics.
-- `functions.joh_loom_helpers.select_loom_experiments`: metadata-driven selection of raw shoaling loom experiments using year, line, genotype, lineSet, and folder filters.
+- `functions.joh_loom_helpers.select_loom_experiments`: metadata-driven selection of raw shoaling loom experiments using date mode, line, genotype, lineSet, and folder filters.
+- `functions.joh_loom_helpers.normalize_genotype`, `loom_genotype_catalog`, `resolve_requested_genotypes`: normalized loom-genotype metadata and user-selection helpers.
 - `functions.joh_loom_helpers.extract_trial_velocity_summary`, `trial_max_velocity_summary`: condition-trial-aligned velocity traces and per-trial post-loom maximum-speed summaries.
 - `functions.joh_loom_helpers.collect_or_load_loom_analysis_data`, `summarize_across_experiments`: per-experiment loom cache orchestration and equal-experiment aggregation for `Analyses/LoomAnalysisCR.ipynb`.
 - `functions.video_functions.get_pixel_scaling`: video/ROI-derived scale owner.

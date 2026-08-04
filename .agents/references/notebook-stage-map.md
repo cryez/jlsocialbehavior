@@ -24,7 +24,7 @@ Use this file for tasks involving `Analyses/*.ipynb`, `DeprecatedAnalyses/Larsch
    - Input: a raw primary-2026 animal trajectory file with embedded stimulus columns; the notebook derives closed-loop loom trials from episode labels beginning with `CLfull`.
    - Purpose: inspect trial-specific orientation, raw linear/angular velocity, trial timing, post-loom maximum velocity, actual rotated trajectories, legacy center-distance traces, and baseline/response escape metrics.
    - Legacy alignment: reusable extraction uses a fixed `epFrame=150` onset within each CL block, the legacy rotation convention, no L/R mirroring, and raw-coordinate baseline/response displacement metrics. The notebook owns the analysis settings and display composition; `functions/joh_loom_helpers.py` owns loading, trial parsing, extraction, and legacy metric semantics.
-   - Multi-experiment semantics: `LoomAnalysisCR.ipynb` selects experiments dynamically from `MetaData_CR.xlsx`, reduces each recording before combining experiments, aligns repeats with a one-based condition-trial index, and treats experiments as equally weighted replicates.
+   - Multi-experiment semantics: `LoomAnalysisCR.ipynb` selects experiments dynamically from `MetaData_CR.xlsx`, reduces each recording before combining experiments, aligns repeats with a one-based condition-trial index, and treats experiments as equally weighted replicates. Its global plot switch selects either exact pooled-fish cache rows or experiment-level genotype summaries derived from `AllAn` animal IDs.
 
 ## Key outputs
 

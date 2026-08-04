@@ -1,6 +1,178 @@
 # Recent Changes - Notebook Figure Workflows
 
+### 2026-07-24 - Sel1 versus Sel3 hi/lo loom-response plots
+
+- Slice goal: Compare hi and lo loom responses separately within Sel1 and Sel3 line families while excluding Sel1_GC.
+- What changed: Appended family-specific legacy center-distance, merged-response, maximum-velocity time/fit, and both side-layout plots to `Analyses/LoomAnalysisCR.ipynb`; Sel1/TLSel1 and Sel3/TLSel3 reuse the existing experiment-level caches with shared plot scales.
+- Rerun implications: No cache rebuild is required; rerun the notebook through the new final section after the compact loom tables have loaded.
+- Validation performed: Notebook JSON, executable-cell syntax, line-family classification, genotype filtering, and synthetic plot rendering were checked.
+
+### 2026-07-24 - Loom cohort date filtering
+
+- Slice goal: Replace the fixed year selector in `Analyses/LoomAnalysisCR.ipynb` with editable date-based cohort selection.
+- What changed: Added inclusive start-date and exclusion-range modes, removed the fixed expected-experiment-count warning, and report the number of selected experiments after metadata/date filtering.
+- Rerun implications: Rerun the notebook from its settings and metadata-selection cells after changing the date mode or date values; matching per-experiment loom caches remain reusable.
+- Validation performed: Added helper tests for inclusive boundaries, missing dates, and invalid date settings; notebook JSON and executable-cell syntax checks will be run after the edit.
+
+### 2026-07-22 - Gaussian peak fits for max velocity over time
+
+- Slice goal: Capture the initial max-velocity rise at loom sizes 1 and 5 before comparing the subsequent genotype-specific decline.
+- What changed: Replaced the estimated-floor exponential curves in `Analyses/LoomAnalysisCR.ipynb` with bounded estimated-floor Gaussian peak fits, expanded the time axis to include the complete protocol, and report peak timing plus the maximum post-peak velocity-loss rate and related width/half-decay summaries.
+- Rerun implications: No raw-data or cache rebuild is required; rerun the time-versus-maximum-velocity plot cell after loading `trial_max_velocity`.
+- Validation performed: Parsed and syntax-checked the notebook, recovered known Gaussian parameters in split and pooled synthetic tests, checked fit failure modes and derived-rate formulas, and smoke-rendered the eight cached experiments for visual inspection.
+
+### 2026-07-22 - Genotype-specific velocity decay curves
+
+- Slice goal: Compare how quickly post-loom maximum velocity decreases over experiment time for each displayed genotype.
+- What changed: Replaced the pooled Pearson annotation in `Analyses/LoomAnalysisCR.ipynb` with independent nonnegative estimated-floor exponential fits, genotype-coloured curve overlays, decay constants in the legend, and a descriptive table of floors, amplitudes, initial decrease rates, half-lives, fit quality, and point counts.
+- Rerun implications: No raw-data or cache rebuild is required; rerun the time-versus-maximum-velocity plot cell after loading `trial_max_velocity`.
+- Validation performed: Parsed and syntax-checked the notebook, smoke-rendered split and pooled modes with synthetic exponential data, checked failure handling, and visually inspected the split plot.
+
+### 2026-07-22 - Loom-size shapes in maximum-velocity side plots
+
+- Slice goal: Make loom maximum size shape-coded in both maximum-velocity-by-side figures while retaining genotype colour coding.
+- What changed: Added deterministic `SIZE_MARKERS`, removed loom-size colour encoding, applied size markers to individual points, and split the legends into genotype-colour and loom-size-shape entries. Pooled mode uses neutral box/point colours.
+- Validation performed: Parsed the notebook and smoke-rendered both side plots in split and pooled modes; visually inspected the split figure for consistent genotype colours, size shapes, and readable legends.
+
+### 2026-07-22 - Genotype-aware loom-response plots
+
+- Slice goal: Compare user-selected fish genotypes throughout the multi-experiment loom notebook while preserving pooled views.
+- What changed: Added normalized `AllAn` genotype mapping, pooled plus per-genotype loom cache rows, dynamic genotype catalog/selection controls defaulting to hi/lo/F2, genotype-aware versions of all seven existing figure outputs, and descriptive maximum-speed and legacy-response summaries with experiment and fish counts. The cache schema is now version 2, so old pooled-only caches reprocess automatically.
+- Rerun implications: Rerun `Analyses/LoomAnalysisCR.ipynb` from metadata selection through processing; the first run rebuilds the four per-experiment loom caches, while later plot-switch changes reuse them.
+- Validation performed: Compiled the helper, parsed every notebook code cell, passed targeted metadata/extraction/cache-contract tests, and smoke-rendered all plot cells with synthetic pooled and three-genotype data in split and pooled modes. Live metadata and raw-data rendering were unavailable because the network share denied access in the agent environment.
+
 Append meaningful completed changes here.
+
+### 2026-07-21 - Detail SI slowdown cluster bootstrap
+
+- Slice goal: Make every sampling, filtering, and inferential step of the SI slowdown bootstrap auditable from the notebook and helper source.
+- What changed: Added a step-by-step description of per-stimulus whole-experiment resampling, duplicate-cluster relabeling, retained fish/time dependence, model refitting and genotype reweighting, failed and nonpositive draw handling, requested-draw rate denominators, the positive-total-increase gate, the conditional crossing-time interval, and the maximum-deviation simultaneous upper band. Clarified that the default performs 500 refits per stimulus rather than one paired set of 500 two-stimulus refits, and documented cluster-count and late-window interpretation limits.
+- Rerun implications: Documentation/comments only; no processing, bootstrap, table, or figure rerun is required.
+- Validation performed: Parsed the notebook JSON and checked the expanded bootstrap source against `functions/si_slowdown.py`; targeted contracts verified the sampling unit, duplicate relabeling, draw accounting, positive-increase gate, conditional interval, simultaneous-band formula, and per-stimulus refit count. Python execution remained unavailable because no working interpreter is installed in the checkout or on PATH.
+
+### 2026-07-21 - Move 2h SI slowdown inference after progression-by-experiment
+
+- Slice goal: Keep the 2h SI slowdown inference at the end of the 2h progression sections.
+- What changed: Moved the slowdown explanation, fit, and plot cells together to immediately follow the 2h progression-by-experiment grid; no analysis code or outputs changed.
+- Rerun implications: No processing rerun is required; rerun the moved slowdown cells only if refreshed inference tables or figures are needed.
+- Validation performed: Confirmed notebook cell ordering and preserved slowdown cell contents, parsed/syntax-checked the notebook, and ran the SI slowdown unittest suite.
+
+### 2026-07-21 - Explain SI slowdown inference and vertical markers
+
+- Slice goal: Make the SI slowdown estimand, uncertainty criterion, outputs, and figure markers understandable from the notebook and helper source.
+- What changed: Expanded the notebook markdown with the forward-increment equation, persistence rule, mixed-model hierarchy, experiment-cluster bootstrap, simultaneous upper-band interpretation, result/diagnostic guidance, and an explicit explanation of the solid cyan 100-minute line. Documented every slowdown setting and the analysis/plot cells, expanded `functions/si_slowdown.py` docstrings and intent comments, added dashed/solid vertical-line legend keys, and clarified that lower-panel x-values start forward same-stimulus intervals.
+- Rerun implications: No processing or inference rerun is needed for the documentation changes. Rerun only the slowdown plot cell after the existing slowdown tables are in memory to refresh the saved PDF with the new legend keys and x-axis wording.
+- Validation performed: Parsed the notebook JSON, inspected the three slowdown cell sources, and checked targeted documentation/plot-label contracts. No runnable Python interpreter was available in this checkout or on PATH, so Python compilation and rendered figure inspection were unavailable.
+
+### 2026-07-21 - Restrict SI slowdown inference to the 2h window
+
+- Slice goal: Run SI slowdown-point inference only on the first 24 five-minute episodes and remove stale full-window slowdown artifacts.
+- What changed: Moved the slowdown analysis under the 2h progression summary, restricted its raw input to `episode_number <= 24`, renamed notebook outputs with the `_2h` suffix, and deleted the seven stale `_4h_all` CSV/PDF artifacts from the configured output directory.
+- Rerun implications: Rerun the slowdown cells after loading the summaries to regenerate the seven `_2h` outputs; the full-window progression plot remains unchanged.
+- Validation performed: Notebook JSON parsed; cell order, episode-limit assertion, input source, and output-name contracts passed; all seven stale external artifacts were verified absent after deletion. Python compilation and unit tests were unavailable because the installed Python command is a nonfunctional Windows Store alias.
+
+### 2026-07-21 - Switchable SEM and confidence-interval plot uncertainty
+
+- Slice goal: Allow `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb` plots to show 95% confidence intervals instead of SEM while preserving the current default.
+- What changed: Added the editable `PLOT_CONFIDENCE_INTERVALS` setting, retained parallel SEM and 95% CI summary columns, and routed progression, normalized-SI, per-experiment, and slowdown uncertainty displays through the selected column.
+- Rerun implications: No processing rerun is required; rerun the settings and affected summary/plot cells after changing the setting.
+- Validation performed: Parsed the notebook JSON and passed source-contract checks for both uncertainty modes, including singleton guards and selector coverage; Python AST compilation and rendered smoke tests were unavailable because no working project Python interpreter is present in this session.
+
+### 2026-07-21 - Shoaling-index slowdown inference
+
+- Slice goal: Estimate when each stimulus-specific SI increase becomes smaller than an editable fraction of the total fitted experiment increase.
+- What changed: Added `functions/si_slowdown.py` with spline mixed models, experiment-clustered bootstrap inference, persistent crossings, simultaneous one-sided upper bounds, genotype standardization, residual/coverage checks, spline and leave-one-experiment-out sensitivity tables, and an asymptotic mixed-model comparison. Extended `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb` with editable settings, result exports, and fitted-SI/fraction plots while preserving the canonical summary writer and existing progression plot.
+- Rerun implications: No SI processing rerun is required. Rerun the notebook from its imports/settings and loaded-summary cells; the default requests 500 mixed-model bootstrap refits per stimulus (1,000 primary bootstrap refits across two stimuli) and therefore takes materially longer than a descriptive plot cell.
+- Validation performed: Compiled the helper and tests, parsed and syntax-checked every notebook code cell, ran three unit tests, and smoke-tested both stimulus-specific clustered bootstraps plus the profiled asymptotic and leave-one-experiment-out paths on synthetic repeated-measures data.
+
+### 2026-07-20 - Mortality bars by line or lineage
+
+- Slice goal: Show how selection lines or editable ancestry lineages contribute to both mortality record histograms and tank-normalized mortality proportions without changing either plot's statistic.
+- What changed: Added a shared `MORTALITY_COLOR_BY` setting to `temp/fish_analyzes.ipynb`; `none` preserves the three original category colours, while `line` and `lineage` draw additive stacks and expose record-count and mean-proportion contribution tables. Lineage mode warns and excludes unmapped records and tanks before calculating bins and denominators; `MORTALITY_LINE_FILTER` remains limited to the tank-normalized section.
+- Rerun implications: Rerun the settings and both mortality sections after changing the colour mode, lineage mapping, age-bin width, mortality line filter, or source workbook.
+- Validation performed: Parsed and compiled all 12 code cells; ran all six plots in all three modes against the real workbook; confirmed `none` and `line` retain 320 records/284 usable tanks, lineage mode warns once per section and retains 311 records/273 tanks after excluding four unmapped lines, all record stacks equal histogram counts, all normalized stacks equal the original means, category colours and legends are correct, one- and two-month bins work, single/multiple line filters work, duplicate mapping validation is lineage-only, invalid modes fail, and representative plots in every mode are readable.
+
+### 2026-07-20 - Uncoloured incross-failure age mode
+
+- Slice goal: Provide a pooled, neutral version of the incross-failure-by-age plot alongside lineage- and line-coloured views.
+- What changed: `temp/fish_analyzes.ipynb` now accepts `INCROSS_FAILURE_COLOR_BY = \"none\"`, which includes all eligible selection lines, draws one gray failure-proportion bar per populated age class, and suppresses the grouping legend without consulting `LINEAGE_GROUPS`.
+- Rerun implications: Rerun the settings, crossing-history, and age-bin cells after changing `INCROSS_FAILURE_COLOR_BY`.
+- Validation performed: Parsed and compiled all 12 code cells; ran all three modes against the real workbooks; confirmed `none` retains 126 crosses/27 failures with one gray series, exact failure-proportion heights, no lineage warnings, and no legend; reconfirmed lineage mode excludes the current unmapped cross with one warning, line mode retains all crosses, invalid values fail clearly, and visually inspected the uncoloured render.
+
+### 2026-07-20 - Optional lineage exclusions for incross failures
+
+- Slice goal: Allow users to omit selection lines from the editable ancestry mapping without blocking the lineage-coloured age analysis.
+- What changed: Lineage mode in `temp/fish_analyzes.ipynb` now warns once about unmapped lines and excludes their crosses before calculating age-bin totals, failure proportions, stacks, and sample-size labels; line mode remains independent of the lineage mapping.
+- Rerun implications: Rerun the settings, crossing-history, and age-bin cells after adding or removing lines from `LINEAGE_GROUPS`.
+- Validation performed: Parsed and compiled all 12 code cells; ran complete and user-edited mappings against the real workbooks; confirmed the complete result remains 126 crosses/27 failures, omitting `TL sel1 lo9xTLN inx` warns once and leaves 125 lineage-mode crosses with updated denominators, line mode retains all 126 crosses without warning, stacks match failure proportions, and multiple omissions, duplicate assignments, invalid modes, and an all-unmapped cohort behave as intended; visually inspected the partial-lineage render.
+
+### 2026-07-20 - Switchable lineage coloring for incross failures
+
+- Slice goal: Let the fish-age incross-failure stacks be grouped and coloured by editable ancestry lineages while retaining the original per-line view.
+- What changed: Added a top-level `INCROSS_FAILURE_COLOR_BY` switch and editable nine-lineage mapping to `temp/fish_analyzes.ipynb`; the age-bin failure cell now validates lineage assignments and summarizes, colours, and labels stacks by either lineage or selection line without changing denominators.
+- Rerun implications: Rerun the settings, crossing-history, and age-bin cells after changing the display switch, lineage mapping, filters, bin width, or source workbook.
+- Validation performed: Parsed and compiled all 12 code cells; ran both lineage and line modes against the real workbooks; confirmed 126 eligible crosses, 27 failures, unchanged stacks across 12 one-month bins, the original 11 line segments, six represented lineage segments, correct legends, readable rendered plots, six two-month bins, and clear rejection of invalid switches and missing or duplicate lineage assignments.
+
+### 2026-07-20 - Tank-normalized mortality proportions by age
+
+- Slice goal: Compare the proportion of each tank's initial fish dying within age classes, with an editable selection-line filter.
+- What changed: Extended `temp/fish_analyzes.ipynb` with `Plate`-normalized, non-cumulative mortality summaries and three plots for combined qualifying mortality, overall-bad-shape sacrifices, and found-dead events; only those two causes are included, tanks are equally weighted, and the setting accepts `all`, one line, or multiple lines.
+- Rerun implications: Rerun the loading/settings, mortality, and new mortality-proportion cells after changing `MORTALITY_LINE_FILTER`, `AGE_BIN_MONTHS`, or `fish_database.xlsx`.
+- Validation performed: Parsed and compiled all 12 code cells; ran the new section against the real workbook; confirmed 37 valid lines, 284 usable tanks, 1,059 found-dead fish, 184 bad-shape fish, exclusion of 2,044 old-age/no-use fish, bounded/additive proportions, three rendered plots, single/multiple/case-insensitive/zero-death filters, two-month bins, and rejection of invalid filters, widths, tank metadata, and mortality amounts.
+
+### 2026-07-19 - Cumulative near-maximum SI probability progression
+
+- Slice goal: Show the cumulative probability that pooled fish have reached at least 95% of their own stimulus-specific maximum SI during the first 2 hours.
+- What changed: Added persistent per-fish/type reached states and a pooled continuous-versus-bout-like cumulative probability trajectory with observed-fish SEM and counts, bounded probability bands, and a dedicated PDF output to `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb`; fish with missing SI are omitted only from the current episode's denominator.
+- Rerun implications: No processing rerun is required; rerun the maximum-normalized calculation and new probability cells to create `si_near_max_probability_progression_2026_2h.pdf`.
+- Validation performed: Parsed and syntax-checked every notebook code cell, then smoke-tested exact-threshold inclusion, persistent reached states after SI declines and across missing episodes, independent stimulus histories, category-specific exclusions, observed-only denominators, pooled probabilities/SEM/counts, first-episode inclusion, bounded bands, plot labels, axis limits, legend, and PDF target with synthetic data.
+
+### 2026-07-19 - Skip recordings without loom episodes
+
+- Slice goal: Let multi-experiment loom analysis continue past recordings that do not contain supported `CLfull###L/R` stimulus episodes.
+- What changed: Loom collection now warns once per skipped experiment, writes no cache for it, preserves valid experiments, and raises a clear final error when every experiment is skipped.
+- Rerun implications: Rerun the loom data-collection cell; existing valid caches remain compatible.
+- Validation performed: Compiled the helper and smoke-tested mixed, all-invalid, valid cached, no-cache-on-skip, and unrelated-error behavior with synthetic data.
+
+### 2026-07-19 - Maximum-normalized SI progression
+
+- Slice goal: Replace episode-to-episode SI changes with SI levels expressed relative to each fish's own stimulus-specific maximum.
+- Passes completed: Simplified the final section of `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb` to pool normalized fish observations directly for the cohort plot and within experiments for the grid.
+- What changed: Differencing and the pooling-mode switch were removed; first episodes are included, category-specific invalid-SI exclusion remains active, SEM is calculated across fish, and two newly named normalized-progression PDFs replace the old increase outputs in notebook code.
+- Rerun implications: No processing rerun is required; rerun the normalized calculation and plotting cells to create `si_normalized_progression_2026_2h.pdf` and `si_normalized_progression_2026_2h_by_experiment.pdf`. Previously generated increase PDFs are not deleted.
+- Validation performed: Parsed and compiled all notebook cells and smoke-tested per-fish 100% maxima, category-specific exclusions, retained negative normalized observations, first-episode inclusion, pooled means and SEM, nine experiment panels, labels, and new PDF targets with synthetic data.
+
+### 2026-07-19 - Category-specific invalid-SI exclusion
+
+- Slice goal: Allow SI-increase plots to run when individual fish have no positive SI maximum for one or both stimulus categories.
+- Passes completed: Replaced the fatal maximum-SI validation in `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb` with an auditable fish/type exclusion table and category-specific filtering.
+- What changed: Fish/type combinations with nonfinite or nonpositive maximum SI are reported and removed before normalization; a fish remains eligible in its other stimulus category when that maximum is valid.
+- Rerun implications: No processing rerun is required; rerun the SI-increase calculation and plot cells to regenerate the existing PDFs.
+- Validation performed: Parsed and compiled the notebook and smoke-tested one-category exclusion, two-category exclusion, retained valid maxima, both pooling modes, pooled sample counts, and aggregate/grid rendering with synthetic data.
+
+### 2026-07-19 - Fish-pooled SI increase modes
+
+- Slice goal: Match the SI progression hierarchy by pooling fish in the episode-to-episode SI increase plots while retaining an alternate pooled-means calculation.
+- Passes completed: Revised `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb` with a `SI_INCREASE_POOLING_MODE` switch, per-fish/per-stimulus maxima, pooled fish-change summaries, and pooled-normalized-mean summaries.
+- What changed: The default `fish_changes` mode pools normalized fish-level changes and shows SEM across fish; `pooled_means` differences pooled normalized SI and omits uncertainty bands. Experiment-balanced aggregation and experiment/type denominators were removed from this analysis.
+- Rerun implications: No processing rerun is required; rerun the revised episode-to-episode cells after `df_plot` is loaded to overwrite the existing PDFs.
+- Validation performed: Parsed and compiled all notebook cells and smoke-tested unequal experiment sizes, distinct fish/type maxima, pooled weighting, both switch modes, SEM-band behavior, invalid settings and maxima, first-occurrence omission, time alignment, nine panels, labels, and PDF targets with synthetic data.
+
+### 2026-07-18 - Stimulus-specific SI maximum normalization
+
+- Slice goal: Express episode-to-episode SI changes relative to the maximum SI reached separately for continuous and bout-like stimuli within each experiment.
+- Passes completed: Revised the episode-to-episode section of `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb` to derive experiment/type maxima from animal-averaged episode SI and use them as distinct denominators.
+- What changed: Each animal-level same-type SI difference is now reported as a percentage of its experiment and stimulus type's maximum mean SI; the overall and experiment-grid plots retain their existing aggregation and output filenames.
+- Rerun implications: No processing rerun is required; rerun the revised episode-to-episode cells after `df_plot` is loaded to overwrite the two PDFs.
+- Validation performed: Parsed and compiled the notebook and smoke-tested type-specific denominators, normalized changes, invalid-maximum rejection, unequal experiment sizes, equal experiment weighting, time alignment, labels, nine panels, and PDF targets with synthetic data.
+
+### 2026-07-17 - Episode-to-episode SI increase plots
+
+- Slice goal: Show how SI changes between successive same-type 5-minute episodes during the first 2 hours, both across the cohort and within each experiment.
+- Passes completed: Extended `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb` with animal-level percentage-point changes, equal-experiment aggregation, an overall plot, and a nine-panel experiment grid.
+- What changed: Continuous (`01k01f`) and bout-like (`02k20f`) changes are aligned to the current episode start, with the first occurrence of each type omitted; bands show SEM across experiments in the overall plot and across animals in each experiment panel.
+- Rerun implications: No processing rerun is required; rerun the new cells after `df_plot` is loaded to create the two new PDFs in the existing output directory.
+- Validation performed: Parsed the notebook JSON, compiled all 14 code cells, and smoke-tested unequal experiment sizes, same-animal/same-type differencing, equal experiment weighting, first-occurrence omission, time alignment, both rendered figures, nine grid panels, labels, axis limits, and PDF targets with synthetic data.
 
 ### 2026-07-16 - Selection-line mortality histograms by age
 

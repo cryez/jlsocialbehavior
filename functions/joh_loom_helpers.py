@@ -11,7 +11,8 @@ import numpy as np
 import pandas as pd
 
 
-LOOM_CACHE_SCHEMA_VERSION = 1
+LOOM_CACHE_SCHEMA_VERSION = 2
+POOLED_GENOTYPE = "__pooled__"
 
 
 class _NoLoomStimulusEpisodesError(ValueError):
@@ -400,16 +401,60 @@ def parse_animal_numbers(value) -> list[int]:
     return [int(item) for item in re.split(r"[\s,]+", text) if item]
 
 
+def normalize_genotype(value) -> str | None:
+    """Return the case-insensitive genotype key used by loom analyses."""
+    if pd.isna(value):
+        return None
+    genotype = str(value).strip().lower()
+    return genotype if genotype and genotype != "na" else None
+
+
+def loom_genotype_catalog(meta_path: str | Path) -> list[str]:
+    """List valid normalized genotype labels in the ``AllAn`` metadata sheet."""
+    info_an = pd.read_excel(meta_path, sheet_name="AllAn")
+    if "genotype" not in info_an:
+        return []
+    return sorted(
+        {
+            genotype
+            for value in info_an["genotype"]
+            if (genotype := normalize_genotype(value)) is not None
+        }
+    )
+
+
+def resolve_requested_genotypes(requested, available) -> tuple[list[str], list[str]]:
+    """Return requested genotypes present in the data and requested labels to skip."""
+    normalized_requested = list(
+        dict.fromkeys(
+            genotype
+            for value in requested
+            if (genotype := normalize_genotype(value)) is not None
+        )
+    )
+    normalized_available = {
+        genotype
+        for value in available
+        if (genotype := normalize_genotype(value)) is not None
+    }
+    active = [value for value in normalized_requested if value in normalized_available]
+    missing = [value for value in normalized_requested if value not in normalized_available]
+    return active, missing
+
+
 def select_loom_experiments(
     meta_path: str | Path,
-    include_years=(2026,),
+    date_filter_mode="include_from_date",
+    include_from_date="2026-01-01",
+    exclude_date_start=None,
+    exclude_date_end=None,
     include_lines=None,
     include_genotypes=None,
     include_line_sets=None,
     include_folders=None,
     exclude_folders=(),
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Select raw shoaling experiments using the neighborhood-notebook filters.
+    """Select raw shoaling experiments using metadata and date filters.
 
     Returns the usable experiments and a second table describing selected
     metadata rows whose ``PositionTxt*`` input could not be found.
@@ -420,9 +465,22 @@ def select_loom_experiments(
         info_an["expDate"], format="%d-%m-%Y", dayfirst=True, errors="coerce"
     )
 
-    year_filter = _filter_set(include_years)
+    date_filter = _validate_date_filter(
+        date_filter_mode,
+        include_from_date,
+        exclude_date_start,
+        exclude_date_end,
+    )
     line_filter = _filter_set(include_lines)
-    genotype_filter = _filter_set(include_genotypes)
+    genotype_filter = (
+        None
+        if include_genotypes is None
+        else {
+            genotype
+            for value in include_genotypes
+            if (genotype := normalize_genotype(value)) is not None
+        }
+    )
     line_set_filter = _filter_set(include_line_sets)
     folder_filter = _filter_set(include_folders)
     excluded = _filter_set(exclude_folders) or set()
@@ -438,16 +496,20 @@ def select_loom_experiments(
 
         animal_ids = parse_animal_numbers(row.get("anNr", ""))
         animals = info_an.loc[info_an["anNr"].isin(animal_ids)].copy()
-        years = sorted(animals["expDate"].dropna().dt.year.astype(int).unique())
+        experiment_dates = pd.DatetimeIndex(animals["expDate"].dropna()).normalize()
+        years = sorted(experiment_dates.year.astype(int).unique())
         lines = sorted(animals["line"].dropna().astype(str).unique()) if "line" in animals else []
-        genotypes = (
-            sorted(animals["genotype"].dropna().astype(str).unique())
-            if "genotype" in animals
-            else []
-        )
+        animal_genotypes = {}
+        if "genotype" in animals:
+            animal_genotypes = {
+                int(animal.anNr): genotype
+                for animal in animals[["anNr", "genotype"]].itertuples(index=False)
+                if (genotype := normalize_genotype(animal.genotype)) is not None
+            }
+        genotypes = sorted(set(animal_genotypes.values()))
         line_sets = sorted({f"{line}_{row.get('date', '')}" for line in lines})
 
-        if not _intersects(years, year_filter):
+        if not _matches_date_filter(experiment_dates, date_filter):
             continue
         if not _intersects(lines, line_filter):
             continue
@@ -476,6 +538,7 @@ def select_loom_experiments(
                 "experiment": folder,
                 "txt_path": position_files[0],
                 "animal_ids": animal_ids,
+                "animal_genotypes": animal_genotypes,
                 "n_animals": len(animal_ids),
                 "years": years,
                 "exp_year": years[0] if len(years) == 1 else np.nan,
@@ -510,8 +573,9 @@ def extract_trial_velocity_summary(
     fps: float = 30,
     units_per_mm: float = 4.0,
     n_animals: int = 35,
+    animal_genotypes=None,
 ) -> pd.DataFrame:
-    """Average linear and angular velocity across animals for every loom trial."""
+    """Average trial velocity across all fish and, optionally, by genotype."""
     if frame_start < 0 or frame_end <= frame_start:
         raise ValueError("Velocity frame range must satisfy 0 <= start < end.")
     if step_frames <= 0 or fps <= 0 or units_per_mm <= 0:
@@ -520,6 +584,7 @@ def extract_trial_velocity_summary(
     if units_per_mm <= 0:
         raise ValueError("units_per_mm must be positive.")
     x, y, orientation = animal_arrays(animal_df, n_animals=n_animals)
+    genotype_groups = _genotype_index_groups(animal_genotypes, n_animals)
     sample_frames = np.arange(frame_start + step_frames, frame_end + 1, step_frames)
     seconds = step_frames / fps
     rows = []
@@ -546,8 +611,7 @@ def extract_trial_velocity_summary(
             angular = np.degrees(
                 window_orientation[current] - window_orientation[previous]
             ) / seconds
-            rows.append(
-                {
+            base_row = {
                     "trial": int(trial_row.trial),
                     "condition_trial": int(trial_row.condition_trial),
                     "block": int(trial_row.block),
@@ -555,11 +619,29 @@ def extract_trial_velocity_summary(
                     "side": trial_row.side,
                     "loom_max_size": int(trial_row.loom_max_size),
                     "epFrame": int(ep_frame),
-                    "linear_velocity_mm_s": float(np.nanmean(linear)),
-                    "signed_angular_velocity_deg_s": float(np.nanmean(angular)),
-                    "n_fish": int(np.isfinite(linear).sum()),
-                }
-            )
+            }
+            if animal_genotypes is None:
+                rows.append(
+                    {
+                        **base_row,
+                        "linear_velocity_mm_s": float(np.nanmean(linear)),
+                        "signed_angular_velocity_deg_s": float(np.nanmean(angular)),
+                        "n_fish": int(np.isfinite(linear).sum()),
+                    }
+                )
+                continue
+            for genotype, indices in [(POOLED_GENOTYPE, np.arange(n_animals)), *genotype_groups.items()]:
+                group_linear = linear[indices]
+                group_angular = angular[indices]
+                rows.append(
+                    {
+                        **base_row,
+                        "genotype": genotype,
+                        "linear_velocity_mm_s": float(np.nanmean(group_linear)),
+                        "signed_angular_velocity_deg_s": float(np.nanmean(group_angular)),
+                        "n_fish": int(np.isfinite(group_linear).sum()),
+                    }
+                )
     return pd.DataFrame(rows)
 
 
@@ -572,14 +654,16 @@ def trial_max_velocity_summary(
     fps: float = 30,
     units_per_mm: float = 4.0,
     n_animals: int = 35,
+    animal_genotypes=None,
 ) -> pd.DataFrame:
-    """Compute each trial's median across fish of post-loom maximum speed."""
+    """Compute post-loom maximum speed across all fish and optionally by genotype."""
     if window_frames <= 0 or step_frames <= 0 or window_frames % step_frames:
         raise ValueError("window_frames must be a positive multiple of step_frames.")
     if fps <= 0 or units_per_mm <= 0:
         raise ValueError("fps and units_per_mm must be positive.")
 
     x, y, _ = animal_arrays(animal_df, n_animals=n_animals)
+    genotype_groups = _genotype_index_groups(animal_genotypes, n_animals)
     seconds = step_frames / fps
     sample_offsets = np.arange(step_frames, window_frames + 1, step_frames)
     rows = []
@@ -605,8 +689,7 @@ def trial_max_velocity_summary(
         fish_max = np.full(n_animals, np.nan)
         if valid_fish.any():
             fish_max[valid_fish] = np.nanmax(speed_stack[:, valid_fish], axis=0)
-        rows.append(
-            {
+        base_row = {
                 "trial": int(trial_row.trial),
                 "condition_trial": int(trial_row.condition_trial),
                 "block": int(trial_row.block),
@@ -617,10 +700,26 @@ def trial_max_velocity_summary(
                 "fixed_loom_onset_frame": onset,
                 "time_since_experiment_start_s": onset / fps,
                 "time_since_experiment_start_min": onset / fps / 60,
-                "trial_median_max_linear_velocity_mm_s": float(np.nanmedian(fish_max)),
-                "n_fish": int(np.isfinite(fish_max).sum()),
-            }
-        )
+        }
+        if animal_genotypes is None:
+            rows.append(
+                {
+                    **base_row,
+                    "trial_median_max_linear_velocity_mm_s": float(np.nanmedian(fish_max)),
+                    "n_fish": int(np.isfinite(fish_max).sum()),
+                }
+            )
+            continue
+        for genotype, indices in [(POOLED_GENOTYPE, np.arange(n_animals)), *genotype_groups.items()]:
+            group_max = fish_max[indices]
+            rows.append(
+                {
+                    **base_row,
+                    "genotype": genotype,
+                    "trial_median_max_linear_velocity_mm_s": float(np.nanmedian(group_max)),
+                    "n_fish": int(np.isfinite(group_max).sum()),
+                }
+            )
     return pd.DataFrame(rows)
 
 
@@ -656,11 +755,21 @@ def collect_or_load_loom_analysis_data(
         if n_animals <= 0:
             raise ValueError(f"{experiment}: metadata contains no animal IDs.")
         animal_ids = [int(value) for value in row.get("animal_ids", range(1, n_animals + 1))]
+        raw_animal_genotypes = row.get("animal_genotypes", {})
+        if not isinstance(raw_animal_genotypes, dict):
+            raw_animal_genotypes = {}
+        animal_genotype_map = {
+            int(animal_id): normalize_genotype(genotype)
+            for animal_id, genotype in raw_animal_genotypes.items()
+            if normalize_genotype(genotype) is not None
+        }
+        animal_genotypes = [animal_genotype_map.get(animal_id) for animal_id in animal_ids]
         cache_paths = loom_cache_paths(row, processing_dir)
         settings = _loom_cache_settings(
             txt_path,
             n_animals,
             animal_ids,
+            animal_genotypes,
             onset_in_block,
             pre_frames,
             post_frames,
@@ -805,12 +914,29 @@ def _process_loom_experiment(
     snippets["animal_id"] = snippets["animal"].map(
         {index + 1: animal_id for index, animal_id in enumerate(animal_ids)}
     )
+    raw_animal_genotypes = row.get("animal_genotypes", {})
+    if not isinstance(raw_animal_genotypes, dict):
+        raw_animal_genotypes = {}
+    animal_genotype_map = {
+        int(animal_id): normalize_genotype(genotype)
+        for animal_id, genotype in raw_animal_genotypes.items()
+        if normalize_genotype(genotype) is not None
+    }
+    animal_genotypes = [animal_genotype_map.get(animal_id) for animal_id in animal_ids]
+    snippets["genotype"] = snippets["animal_id"].map(animal_genotype_map)
     animal_traces = snippets.groupby(
-        ["loom_max_size", "side", "animal_id", "relative_frame"], as_index=False
+        ["loom_max_size", "side", "animal_id", "genotype", "relative_frame"],
+        as_index=False,
+        dropna=False,
     )["center_dist_mm"].mean()
-    center_traces = animal_traces.groupby(
+    pooled_center = animal_traces.groupby(
         ["loom_max_size", "side", "relative_frame"], as_index=False
     ).agg(center_dist_mm=("center_dist_mm", "mean"), n_animals=("animal_id", "nunique"))
+    pooled_center["genotype"] = POOLED_GENOTYPE
+    genotype_center = animal_traces.dropna(subset=["genotype"]).groupby(
+        ["loom_max_size", "side", "genotype", "relative_frame"], as_index=False
+    ).agg(center_dist_mm=("center_dist_mm", "mean"), n_animals=("animal_id", "nunique"))
+    center_traces = pd.concat([pooled_center, genotype_center], ignore_index=True)
 
     raw_metrics = legacy_loom_response_metrics(
         animals,
@@ -822,26 +948,47 @@ def _process_loom_experiment(
     raw_metrics["animal_id"] = raw_metrics["animal"].map(
         {index + 1: animal_id for index, animal_id in enumerate(animal_ids)}
     )
+    raw_metrics["genotype"] = raw_metrics["animal_id"].map(animal_genotype_map)
     metric_columns = ["escape", "response_dist", "response_over_baseline"]
     animal_side = raw_metrics.groupby(
-        ["loom_max_size", "side", "animal_id"], as_index=False
+        ["loom_max_size", "side", "animal_id", "genotype"], as_index=False, dropna=False
     )[metric_columns].mean()
-    side_metrics = animal_side.groupby(["loom_max_size", "side"], as_index=False).agg(
+    pooled_side_metrics = animal_side.groupby(["loom_max_size", "side"], as_index=False).agg(
         escape=("escape", "mean"),
         response_dist=("response_dist", "mean"),
         response_over_baseline=("response_over_baseline", "mean"),
         n_animals=("animal_id", "nunique"),
     )
+    pooled_side_metrics["genotype"] = POOLED_GENOTYPE
+    genotype_side_metrics = animal_side.dropna(subset=["genotype"]).groupby(
+        ["loom_max_size", "side", "genotype"], as_index=False
+    ).agg(
+        escape=("escape", "mean"),
+        response_dist=("response_dist", "mean"),
+        response_over_baseline=("response_over_baseline", "mean"),
+        n_animals=("animal_id", "nunique"),
+    )
+    side_metrics = pd.concat([pooled_side_metrics, genotype_side_metrics], ignore_index=True)
     side_metrics["aggregation"] = "side_resolved"
     animal_merged = raw_metrics.groupby(
-        ["loom_max_size", "animal_id"], as_index=False
+        ["loom_max_size", "animal_id", "genotype"], as_index=False, dropna=False
     )[metric_columns].mean()
-    merged_metrics = animal_merged.groupby("loom_max_size", as_index=False).agg(
+    pooled_merged_metrics = animal_merged.groupby("loom_max_size", as_index=False).agg(
         escape=("escape", "mean"),
         response_dist=("response_dist", "mean"),
         response_over_baseline=("response_over_baseline", "mean"),
         n_animals=("animal_id", "nunique"),
     )
+    pooled_merged_metrics["genotype"] = POOLED_GENOTYPE
+    genotype_merged_metrics = animal_merged.dropna(subset=["genotype"]).groupby(
+        ["loom_max_size", "genotype"], as_index=False
+    ).agg(
+        escape=("escape", "mean"),
+        response_dist=("response_dist", "mean"),
+        response_over_baseline=("response_over_baseline", "mean"),
+        n_animals=("animal_id", "nunique"),
+    )
+    merged_metrics = pd.concat([pooled_merged_metrics, genotype_merged_metrics], ignore_index=True)
     merged_metrics["side"] = "merged"
     merged_metrics["aggregation"] = "lr_merged"
     response_metrics = pd.concat([side_metrics, merged_metrics], ignore_index=True)
@@ -855,6 +1002,7 @@ def _process_loom_experiment(
         fps=fps,
         units_per_mm=units_per_mm,
         n_animals=n_animals,
+        animal_genotypes=animal_genotypes,
     )
     trial_max = trial_max_velocity_summary(
         animals,
@@ -865,6 +1013,7 @@ def _process_loom_experiment(
         fps=fps,
         units_per_mm=units_per_mm,
         n_animals=n_animals,
+        animal_genotypes=animal_genotypes,
     )
 
     for table in (center_traces, response_metrics, trial_velocity, trial_max):
@@ -883,6 +1032,7 @@ def _loom_cache_settings(
     txt_path,
     n_animals,
     animal_ids,
+    animal_genotypes,
     onset_in_block,
     pre_frames,
     post_frames,
@@ -903,6 +1053,7 @@ def _loom_cache_settings(
         "txt_mtime_ns": int(stat.st_mtime_ns),
         "n_animals": int(n_animals),
         "animal_ids": [int(value) for value in animal_ids],
+        "animal_genotypes": [value if value is not None else None for value in animal_genotypes],
         "onset_in_block": int(onset_in_block),
         "pre_frames": int(pre_frames),
         "post_frames": int(post_frames),
@@ -933,6 +1084,18 @@ def _condition_indexed_trials(trials_df: pd.DataFrame) -> pd.DataFrame:
     return add_condition_trial_index(trials_df)
 
 
+def _genotype_index_groups(animal_genotypes, n_animals: int) -> dict[str, np.ndarray]:
+    if animal_genotypes is None:
+        return {}
+    if len(animal_genotypes) != n_animals:
+        raise ValueError("animal_genotypes must have one entry per tracked fish.")
+    normalized = np.asarray([normalize_genotype(value) for value in animal_genotypes], dtype=object)
+    return {
+        genotype: np.flatnonzero(normalized == genotype)
+        for genotype in sorted({value for value in normalized if value is not None})
+    }
+
+
 def _filter_set(values):
     if values is None:
         return None
@@ -941,6 +1104,51 @@ def _filter_set(values):
 
 def _intersects(values, allowed) -> bool:
     return allowed is None or bool(set(values) & allowed)
+
+
+def _parse_user_date(value, setting_name: str) -> pd.Timestamp:
+    if value is None or (isinstance(value, str) and not value.strip()):
+        raise ValueError(f"{setting_name} must be an ISO date in YYYY-MM-DD format.")
+    try:
+        parsed = pd.Timestamp(value).normalize()
+    except (TypeError, ValueError):
+        raise ValueError(f"{setting_name} must be an ISO date in YYYY-MM-DD format.") from None
+    if pd.isna(parsed):
+        raise ValueError(f"{setting_name} must be an ISO date in YYYY-MM-DD format.")
+    return parsed
+
+
+def _validate_date_filter(
+    mode: str,
+    include_from_date,
+    exclude_date_start,
+    exclude_date_end,
+) -> dict[str, object]:
+    valid_modes = {"include_from_date", "exclude_date_range"}
+    if mode not in valid_modes:
+        raise ValueError(f"date_filter_mode must be one of {sorted(valid_modes)}; got {mode!r}.")
+    if mode == "include_from_date":
+        return {
+            "mode": mode,
+            "start": _parse_user_date(include_from_date, "include_from_date"),
+        }
+
+    start = _parse_user_date(exclude_date_start, "exclude_date_start")
+    end = _parse_user_date(exclude_date_end, "exclude_date_end")
+    if start > end:
+        raise ValueError("exclude_date_start must be on or before exclude_date_end.")
+    return {"mode": mode, "start": start, "end": end}
+
+
+def _matches_date_filter(experiment_dates, date_filter: dict[str, object]) -> bool:
+    dates = pd.DatetimeIndex(experiment_dates).dropna().normalize()
+    if dates.empty:
+        return False
+    if date_filter["mode"] == "include_from_date":
+        return bool((dates >= date_filter["start"]).any())
+    return not bool(
+        ((dates >= date_filter["start"]) & (dates <= date_filter["end"])).any()
+    )
 
 
 def _safe_filename(value) -> str:
