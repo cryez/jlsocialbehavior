@@ -19,7 +19,6 @@ def getVideoProperties(aviPath):
         print('this is a debbuging message to know if i am here. This the getVideoProperties.py script')
         print(aviPath)
         print('running command: ' + str(cmnd))
-        print('i think this command is the issue. The path to ffprobe is hard coded')
         p = subprocess.Popen(cmnd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         out = str(out)[3:-10]
