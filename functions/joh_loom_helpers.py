@@ -11,8 +11,10 @@ import numpy as np
 import pandas as pd
 
 
-LOOM_CACHE_SCHEMA_VERSION = 2
+LOOM_CACHE_SCHEMA_VERSION = 7
 POOLED_GENOTYPE = "__pooled__"
+SUPPORTED_LOOM_EPISODE_PATTERN = re.compile(r"^CL(?:full|semi)(\d{3})([LR])")
+UNSIDED_LOOM_EPISODE_PATTERN = re.compile(r"^CLsemi(\d{3})$")
 
 
 class _NoLoomStimulusEpisodesError(ValueError):
@@ -115,7 +117,7 @@ def loom_trials(stimulus_df: pd.DataFrame) -> pd.DataFrame:
         positive_size = segment.loc[segment["stim_size"].gt(0)]
         onset_frame = int(positive_size["frame"].iloc[0]) if len(positive_size) else int(block_row.start_frame)
 
-        match = re.match(r"CLfull(\d{3})([LR])", block_row.episode)
+        match = SUPPORTED_LOOM_EPISODE_PATTERN.match(block_row.episode)
         loom_max_size = int(match.group(1)) if match else int(round(block_row.stim_size_max))
         side = match.group(2) if match else ""
 
@@ -135,6 +137,56 @@ def loom_trials(stimulus_df: pd.DataFrame) -> pd.DataFrame:
         )
 
     return pd.DataFrame(trials)
+
+
+def unsided_loom_trials(
+    stimulus_df: pd.DataFrame,
+    onset_in_block: int = 150,
+) -> pd.DataFrame:
+    """Split unsided ``CLsemi###`` blocks into their individual loom pulses.
+
+    The unsided tuning protocol stores several center looms inside one long
+    episode block. Each transition from zero to positive stimulus size is one
+    trial. ``block_start_frame`` is a virtual trial start chosen so the pulse
+    onset retains the legacy fixed-onset frame used by response metrics.
+    """
+    if onset_in_block < 0:
+        raise ValueError("onset_in_block must be nonnegative.")
+
+    blocks = stimulus_blocks(stimulus_df)
+    rows = []
+    trial_index = 0
+    for block_row in blocks.itertuples(index=False):
+        match = UNSIDED_LOOM_EPISODE_PATTERN.fullmatch(str(block_row.episode))
+        if match is None:
+            continue
+
+        segment = stimulus_df.loc[stimulus_df["block"].eq(block_row.block)].sort_values("frame")
+        positive = segment["stim_size"].fillna(0).gt(0)
+        pulse_onsets = segment.loc[positive & ~positive.shift(fill_value=False), "frame"].astype(int)
+        for pulse_in_block, pulse_onset in enumerate(pulse_onsets, start=1):
+            if pulse_in_block < len(pulse_onsets):
+                pulse_end = int(pulse_onsets.iloc[pulse_in_block]) - 1
+            else:
+                pulse_end = int(block_row.end_frame)
+            rows.append(
+                {
+                    "trial": trial_index,
+                    "block": int(block_row.block),
+                    "pulse_in_block": pulse_in_block,
+                    "episode": str(block_row.episode),
+                    "side": "",
+                    "loom_max_size": int(match.group(1)),
+                    "block_start_frame": int(pulse_onset) - onset_in_block,
+                    "loom_onset_frame": int(pulse_onset),
+                    "onset_in_block": onset_in_block,
+                    "block_end_frame": pulse_end,
+                    "n_frames": pulse_end - (int(pulse_onset) - onset_in_block) + 1,
+                }
+            )
+            trial_index += 1
+
+    return pd.DataFrame(rows)
 
 
 def grating_trials(stimulus_df: pd.DataFrame) -> pd.DataFrame:
@@ -657,50 +709,123 @@ def trial_max_velocity_summary(
     animal_genotypes=None,
 ) -> pd.DataFrame:
     """Compute post-loom maximum speed across all fish and optionally by genotype."""
+    trial_summary, _ = _trial_max_velocity_tables(
+        animal_df,
+        trials_df,
+        onset_in_block=onset_in_block,
+        window_frames=window_frames,
+        step_frames=step_frames,
+        fps=fps,
+        units_per_mm=units_per_mm,
+        n_animals=n_animals,
+        animal_genotypes=animal_genotypes,
+    )
+    return trial_summary
+
+
+def _trial_max_velocity_tables(
+    animal_df: pd.DataFrame,
+    trials_df: pd.DataFrame,
+    onset_in_block: int = 150,
+    window_frames: int = 120,
+    pre_window_frames: int | None = None,
+    step_frames: int = 30,
+    fps: float = 30,
+    units_per_mm: float = 4.0,
+    n_animals: int = 35,
+    animal_genotypes=None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Return trial summaries plus pre-mean and post-maximum speeds per fish."""
     if window_frames <= 0 or step_frames <= 0 or window_frames % step_frames:
         raise ValueError("window_frames must be a positive multiple of step_frames.")
+    if pre_window_frames is not None and (
+        pre_window_frames <= 0 or pre_window_frames % step_frames
+    ):
+        raise ValueError("pre_window_frames must be a positive multiple of step_frames.")
     if fps <= 0 or units_per_mm <= 0:
         raise ValueError("fps and units_per_mm must be positive.")
 
     x, y, _ = animal_arrays(animal_df, n_animals=n_animals)
     genotype_groups = _genotype_index_groups(animal_genotypes, n_animals)
     seconds = step_frames / fps
-    sample_offsets = np.arange(step_frames, window_frames + 1, step_frames)
+    post_sample_offsets = np.arange(step_frames, window_frames + 1, step_frames)
+    pre_sample_offsets = (
+        np.arange(-pre_window_frames + step_frames, 1, step_frames)
+        if pre_window_frames is not None
+        else None
+    )
     rows = []
+    fish_rows = []
     trials = _condition_indexed_trials(trials_df)
 
     for trial_row in trials.itertuples(index=False):
         onset = int(trial_row.block_start_frame) + onset_in_block
-        sample_frames = onset + sample_offsets
-        if sample_frames[-1] >= len(animal_df) or sample_frames[-1] > int(trial_row.block_end_frame):
+        post_sample_frames = onset + post_sample_offsets
+        pre_sample_frames = (
+            onset + pre_sample_offsets if pre_sample_offsets is not None else None
+        )
+        if (
+            (pre_window_frames is not None and onset - pre_window_frames < 0)
+            or post_sample_frames[-1] >= len(animal_df)
+            or post_sample_frames[-1] > int(trial_row.block_end_frame)
+        ):
             continue
 
-        speed_windows = []
-        for current in sample_frames:
+        post_speed_windows = []
+        for current in post_sample_frames:
             previous = int(current - step_frames)
             current = int(current)
-            speed_windows.append(
+            post_speed_windows.append(
                 np.hypot(x[current] - x[previous], y[current] - y[previous])
                 / units_per_mm
                 / seconds
             )
-        speed_stack = np.vstack(speed_windows)
-        valid_fish = np.isfinite(speed_stack).any(axis=0)
+        post_speed_stack = np.vstack(post_speed_windows)
+        valid_fish = np.isfinite(post_speed_stack).any(axis=0)
         fish_max = np.full(n_animals, np.nan)
         if valid_fish.any():
-            fish_max[valid_fish] = np.nanmax(speed_stack[:, valid_fish], axis=0)
+            fish_max[valid_fish] = np.nanmax(post_speed_stack[:, valid_fish], axis=0)
+
+        fish_pre_mean = np.full(n_animals, np.nan)
+        if pre_sample_frames is not None:
+            pre_speed_windows = []
+            for current in pre_sample_frames:
+                previous = int(current - step_frames)
+                current = int(current)
+                pre_speed_windows.append(
+                    np.hypot(x[current] - x[previous], y[current] - y[previous])
+                    / units_per_mm
+                    / seconds
+                )
+            pre_speed_stack = np.vstack(pre_speed_windows)
+            valid_pre_fish = np.isfinite(pre_speed_stack).any(axis=0)
+            if valid_pre_fish.any():
+                fish_pre_mean[valid_pre_fish] = np.nanmean(
+                    pre_speed_stack[:, valid_pre_fish], axis=0
+                )
         base_row = {
-                "trial": int(trial_row.trial),
-                "condition_trial": int(trial_row.condition_trial),
-                "block": int(trial_row.block),
-                "episode": trial_row.episode,
-                "side": trial_row.side,
-                "loom_max_size": int(trial_row.loom_max_size),
-                "condition": f"{int(trial_row.loom_max_size)} {trial_row.side}",
-                "fixed_loom_onset_frame": onset,
-                "time_since_experiment_start_s": onset / fps,
-                "time_since_experiment_start_min": onset / fps / 60,
+            "trial": int(trial_row.trial),
+            "condition_trial": int(trial_row.condition_trial),
+            "block": int(trial_row.block),
+            "episode": trial_row.episode,
+            "side": trial_row.side,
+            "loom_max_size": int(trial_row.loom_max_size),
+            "condition": f"{int(trial_row.loom_max_size)} {trial_row.side}",
+            "fixed_loom_onset_frame": onset,
+            "time_since_experiment_start_s": onset / fps,
+            "time_since_experiment_start_min": onset / fps / 60,
         }
+        for animal_index, (pre_mean, maximum) in enumerate(
+            zip(fish_pre_mean, fish_max), start=1
+        ):
+            fish_rows.append(
+                {
+                    **base_row,
+                    "animal": animal_index,
+                    "fish_mean_pre_loom_linear_velocity_mm_s": pre_mean,
+                    "fish_max_linear_velocity_mm_s": maximum,
+                }
+            )
         if animal_genotypes is None:
             rows.append(
                 {
@@ -720,7 +845,22 @@ def trial_max_velocity_summary(
                     "n_fish": int(np.isfinite(group_max).sum()),
                 }
             )
-    return pd.DataFrame(rows)
+    fish_columns = [
+        "trial",
+        "condition_trial",
+        "block",
+        "episode",
+        "side",
+        "loom_max_size",
+        "condition",
+        "fixed_loom_onset_frame",
+        "time_since_experiment_start_s",
+        "time_since_experiment_start_min",
+        "animal",
+        "fish_mean_pre_loom_linear_velocity_mm_s",
+        "fish_max_linear_velocity_mm_s",
+    ]
+    return pd.DataFrame(rows), pd.DataFrame(fish_rows, columns=fish_columns)
 
 
 def collect_or_load_loom_analysis_data(
@@ -738,13 +878,22 @@ def collect_or_load_loom_analysis_data(
     fps: float = 30,
     units_per_mm: float = 4.0,
     max_velocity_window_frames: int = 120,
+    pre_velocity_window_frames: int = 120,
 ) -> dict[str, pd.DataFrame]:
     """Load cached compact loom tables or derive them one experiment at a time."""
     if experiments.empty:
         raise ValueError("No loom experiments were supplied.")
     processing_dir = Path(processing_dir)
     processing_dir.mkdir(parents=True, exist_ok=True)
-    table_names = ("center_traces", "response_metrics", "trial_velocity", "trial_max_velocity")
+    table_names = (
+        "center_traces",
+        "response_metrics",
+        "trial_velocity",
+        "trial_max_velocity",
+        "fish_trial_max_velocity",
+        "unsided_response_metrics",
+        "unsided_fish_trial_max_velocity",
+    )
     parts = {name: [] for name in table_names}
     valid_experiment_count = 0
 
@@ -781,6 +930,7 @@ def collect_or_load_loom_analysis_data(
             fps,
             units_per_mm,
             max_velocity_window_frames,
+            pre_velocity_window_frames,
         )
         cache_ready = all(cache_paths[name].exists() for name in table_names)
         cache_matches = cache_ready and _cache_settings_match(cache_paths["settings"], settings)
@@ -809,6 +959,7 @@ def collect_or_load_loom_analysis_data(
                     fps,
                     units_per_mm,
                     max_velocity_window_frames,
+                    pre_velocity_window_frames,
                 )
             except _NoLoomStimulusEpisodesError as error:
                 warnings.warn(
@@ -827,7 +978,10 @@ def collect_or_load_loom_analysis_data(
         valid_experiment_count += 1
 
     if valid_experiment_count == 0:
-        raise ValueError("No usable loom experiments remain after skipping experiments without CLfull episodes.")
+        raise ValueError(
+            "No usable loom experiments remain after skipping experiments without supported "
+            "CLfull or CLsemi episodes."
+        )
 
     return {
         name: pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
@@ -859,7 +1013,7 @@ def summarize_across_experiments(
 
 
 def loom_cache_paths(row: pd.Series, processing_dir: str | Path) -> dict[str, Path]:
-    """Return stable per-experiment cache paths for the four compact tables."""
+    """Return stable per-experiment cache paths for the compact loom tables."""
     experiment = row.get("experiment", row.get("folder", "experiment"))
     stem = Path(str(row["txt_path"])).stem
     label = _safe_filename(f"{experiment}_{stem}")
@@ -869,6 +1023,9 @@ def loom_cache_paths(row: pd.Series, processing_dir: str | Path) -> dict[str, Pa
         "response_metrics": root / f"{label}_response_metrics.csv.gz",
         "trial_velocity": root / f"{label}_trial_velocity.csv.gz",
         "trial_max_velocity": root / f"{label}_trial_max_velocity.csv.gz",
+        "fish_trial_max_velocity": root / f"{label}_fish_trial_max_velocity.csv.gz",
+        "unsided_response_metrics": root / f"{label}_unsided_response_metrics.csv.gz",
+        "unsided_fish_trial_max_velocity": root / f"{label}_unsided_fish_trial_max_velocity.csv.gz",
         "settings": root / f"{label}_settings.json",
     }
 
@@ -886,6 +1043,7 @@ def _process_loom_experiment(
     fps,
     units_per_mm,
     max_velocity_window_frames,
+    pre_velocity_window_frames=120,
 ):
     experiment = str(row.get("experiment", row.get("folder", "experiment")))
     experiment_index = int(row.get("experiment_index", 0))
@@ -893,12 +1051,20 @@ def _process_loom_experiment(
     n_animals = len(animal_ids)
     animals = load_animal_file(row["txt_path"], n_animals=n_animals)
     stimulus = embedded_stimulus_from_animal_file(animals)
-    trials = loom_trials(stimulus)
+    all_block_trials = loom_trials(stimulus)
+    unsided_trials = unsided_loom_trials(stimulus, onset_in_block=onset_in_block)
+    if all_block_trials.empty and unsided_trials.empty:
+        raise _NoLoomStimulusEpisodesError(
+            "no supported CLfull or CLsemi loom stimulus episodes were found."
+        )
+    # Existing notebook analyses intentionally receive only L/R-labelled looms.
+    trials = all_block_trials.loc[
+        all_block_trials["episode"].astype(str).str.fullmatch(SUPPORTED_LOOM_EPISODE_PATTERN)
+    ].copy()
     if trials.empty:
-        raise _NoLoomStimulusEpisodesError("no CLfull loom stimulus episodes were found.")
-    trials = trials.loc[trials["episode"].astype(str).str.match(r"^CLfull\d{3}[LR]")].copy()
-    if trials.empty:
-        raise _NoLoomStimulusEpisodesError("no CLfull loom stimulus episodes were found.")
+        raise _NoLoomStimulusEpisodesError(
+            "no sided CLfull or CLsemi loom stimulus episodes were found."
+        )
     trials = add_condition_trial_index(trials)
 
     snippets = extract_legacy_loom_snippets(
@@ -950,6 +1116,13 @@ def _process_loom_experiment(
     )
     raw_metrics["genotype"] = raw_metrics["animal_id"].map(animal_genotype_map)
     metric_columns = ["escape", "response_dist", "response_over_baseline"]
+    # Retain the fish-by-trial grain so notebooks can choose how to combine
+    # sides and repeats without reconstructing metrics from raw trajectories.
+    animal_trial_metrics = raw_metrics[
+        ["trial", "episode", "loom_max_size", "side", "animal_id", "genotype", *metric_columns]
+    ].copy()
+    animal_trial_metrics["n_animals"] = 1
+    animal_trial_metrics["aggregation"] = "animal_trial"
     animal_side = raw_metrics.groupby(
         ["loom_max_size", "side", "animal_id", "genotype"], as_index=False, dropna=False
     )[metric_columns].mean()
@@ -991,7 +1164,9 @@ def _process_loom_experiment(
     merged_metrics = pd.concat([pooled_merged_metrics, genotype_merged_metrics], ignore_index=True)
     merged_metrics["side"] = "merged"
     merged_metrics["aggregation"] = "lr_merged"
-    response_metrics = pd.concat([side_metrics, merged_metrics], ignore_index=True)
+    response_metrics = pd.concat(
+        [side_metrics, merged_metrics, animal_trial_metrics], ignore_index=True
+    )
 
     trial_velocity = extract_trial_velocity_summary(
         animals,
@@ -1004,19 +1179,100 @@ def _process_loom_experiment(
         n_animals=n_animals,
         animal_genotypes=animal_genotypes,
     )
-    trial_max = trial_max_velocity_summary(
+    trial_max, fish_trial_max = _trial_max_velocity_tables(
         animals,
         trials,
         onset_in_block=onset_in_block,
         window_frames=max_velocity_window_frames,
+        pre_window_frames=pre_velocity_window_frames,
         step_frames=velocity_step_frames,
         fps=fps,
         units_per_mm=units_per_mm,
         n_animals=n_animals,
         animal_genotypes=animal_genotypes,
     )
+    fish_trial_max["animal_id"] = fish_trial_max["animal"].map(
+        {index + 1: animal_id for index, animal_id in enumerate(animal_ids)}
+    )
+    fish_trial_max["genotype"] = fish_trial_max["animal_id"].map(animal_genotype_map)
 
-    for table in (center_traces, response_metrics, trial_velocity, trial_max):
+    unsided_response_metrics = pd.DataFrame(
+        columns=[
+            "trial",
+            "condition_trial",
+            "episode",
+            "loom_max_size",
+            "side",
+            "animal_id",
+            "genotype",
+            *metric_columns,
+            "n_animals",
+            "aggregation",
+        ]
+    )
+    unsided_fish_trial_max = fish_trial_max.iloc[0:0].copy()
+    if not unsided_trials.empty:
+        unsided_trials = add_condition_trial_index(unsided_trials)
+        unsided_raw_metrics = legacy_loom_response_metrics(
+            animals,
+            unsided_trials,
+            baseline_frames=tuple(baseline_frames),
+            response_frames=tuple(response_frames),
+            n_animals=n_animals,
+        )
+        unsided_raw_metrics["animal_id"] = unsided_raw_metrics["animal"].map(
+            {index + 1: animal_id for index, animal_id in enumerate(animal_ids)}
+        )
+        unsided_raw_metrics["genotype"] = unsided_raw_metrics["animal_id"].map(
+            animal_genotype_map
+        )
+        unsided_response_metrics = unsided_raw_metrics[
+            [
+                "trial",
+                "episode",
+                "loom_max_size",
+                "side",
+                "animal_id",
+                "genotype",
+                *metric_columns,
+            ]
+        ].merge(
+            unsided_trials[["trial", "condition_trial"]],
+            on="trial",
+            how="left",
+            validate="many_to_one",
+        )
+        unsided_response_metrics["n_animals"] = 1
+        unsided_response_metrics["aggregation"] = "animal_trial"
+
+        _, unsided_fish_trial_max = _trial_max_velocity_tables(
+            animals,
+            unsided_trials,
+            onset_in_block=onset_in_block,
+            window_frames=max_velocity_window_frames,
+            pre_window_frames=pre_velocity_window_frames,
+            step_frames=velocity_step_frames,
+            fps=fps,
+            units_per_mm=units_per_mm,
+            n_animals=n_animals,
+            animal_genotypes=animal_genotypes,
+        )
+        unsided_fish_trial_max["animal_id"] = unsided_fish_trial_max["animal"].map(
+            {index + 1: animal_id for index, animal_id in enumerate(animal_ids)}
+        )
+        unsided_fish_trial_max["genotype"] = unsided_fish_trial_max["animal_id"].map(
+            animal_genotype_map
+        )
+
+    for table in (
+        center_traces,
+        response_metrics,
+        trial_velocity,
+        trial_max,
+        fish_trial_max,
+        unsided_response_metrics,
+        unsided_fish_trial_max,
+    ):
         table.insert(0, "experiment", experiment)
         table.insert(0, "experiment_index", experiment_index)
         table["txt_path"] = str(row["txt_path"])
@@ -1025,6 +1281,9 @@ def _process_loom_experiment(
         "response_metrics": response_metrics,
         "trial_velocity": trial_velocity,
         "trial_max_velocity": trial_max,
+        "fish_trial_max_velocity": fish_trial_max,
+        "unsided_response_metrics": unsided_response_metrics,
+        "unsided_fish_trial_max_velocity": unsided_fish_trial_max,
     }
 
 
@@ -1044,6 +1303,7 @@ def _loom_cache_settings(
     fps,
     units_per_mm,
     max_velocity_window_frames,
+    pre_velocity_window_frames,
 ):
     stat = txt_path.stat()
     return {
@@ -1065,6 +1325,7 @@ def _loom_cache_settings(
         "fps": float(fps),
         "units_per_mm": float(units_per_mm),
         "max_velocity_window_frames": int(max_velocity_window_frames),
+        "pre_velocity_window_frames": int(pre_velocity_window_frames),
     }
 
 

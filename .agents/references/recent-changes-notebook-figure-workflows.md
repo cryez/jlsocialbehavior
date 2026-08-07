@@ -1,5 +1,47 @@
 # Recent Changes - Notebook Figure Workflows
 
+### 2026-08-06 - Unsided pre/post loom velocity plots
+
+- Slice goal: Show individual `CLsemi030` trial maxima in one selectable experiment and compare fish-level pre-loom mean speed with post-loom maximum speed across experiments.
+- What changed: Added an editable pre-loom velocity window, stored fish-by-trial pre-loom mean speed in cache schema version 7, and extended QTL Section 5 with a five-trial point plot, an overlaid pre/post plot, and a post/pre ratio plot.
+- Rerun implications: Rerun the QTL collection cell once to rebuild schema-version-7 caches before running the pre/post and ratio cells; the selected-experiment post-maximum plot can use the existing fish-trial table.
+- Validation performed: Verified exact pre-window speeds and invalid-window handling with synthetic contracts, passed the full test suite, parsed and compiled the notebook, and smoke-rendered all three plots in split and pooled modes including incomplete-trial and invalid-ratio handling.
+
+### 2026-08-05 - Separate unsided CLsemi030 loom analysis
+
+- Slice goal: Keep the last two QTL experiments' unsided `CLsemi030` pulses distinct from size-30 L/R looms and analyze them at fish level.
+- What changed: The cache schema is version 6 with two dedicated unsided tables; the long unsided block is split at its five positive-size pulse onsets, existing tables remain L/R-only, and `LoomAnalysis_QTL.ipynb` adds fish-level response and maximum-velocity plots for the unsided events.
+- Rerun implications: Rerun the QTL collection cell once to rebuild all seven per-experiment cache tables before running the new Section 5 cells.
+- Validation performed: Inspected both experiments' identical `stimulusProtocol` CSVs, passed pulse-splitting and mixed sided/unsided helper contracts, parsed and compiled the notebook, and smoke-rendered the new plots with synthetic fish data.
+
+### 2026-08-05 - Fish-level post-loom maximum velocity across experiments
+
+- Slice goal: Compare fish-level post-loom maximum velocity across QTL experiments at one editable loom maximum size.
+- What changed: Added a fifth fish-by-trial maximum-velocity cache table and a Section 4 seaborn swarm/point plot that merges L/R and repeated trials per fish downstream before showing experiment means with fish-level SD bars.
+- Rerun implications: The loom cache schema is version 5, so rerun the QTL collection cell once before running the new Section 4 plot.
+- Validation performed: Extended synthetic cache contracts, passed the loom helper tests, compiled the notebook, and smoke-rendered split and pooled multi-experiment plots with exact trial merging and invalid-size validation.
+
+### 2026-08-05 - Across-experiment fish-level loom-response point plots
+
+- Slice goal: Compare legacy response distance and response/baseline across all selected QTL experiments at one editable loom maximum size.
+- What changed: Added a Section 2 seaborn point-plot cell to `Analyses/LoomAnalysis_QTL.ipynb`; it averages L/R trials per fish downstream, overlays the resulting fish averages as swarm points, then plots experiment means with fish-level SD bars, genotype hues, and metadata-ordered connecting lines.
+- Rerun implications: Rerun the QTL notebook through the response-metric cache-loading cell, then edit `EXPERIMENT_COMPARISON_LOOM_MAX_SIZE` and run the new plot cell.
+- Validation performed: Parsed and compiled the notebook, smoke-rendered split and pooled synthetic multi-experiment data, and checked trial merging, swarm-point counts, metadata ordering, and invalid loom-size handling.
+
+### 2026-08-04 - Fish-level legacy loom-response plots
+
+- Slice goal: Plot legacy response distance and response/baseline for individual fish in one editable QTL experiment after averaging that fish's repeated L/R trials by loom size.
+- What changed: The loom response cache now retains fish-by-trial rows without merging sides, and `Analyses/LoomAnalysis_QTL.ipynb` adds seaborn strip/point plots with fish points and mean +/- SEM; L/R are merged only in the plotting cell.
+- Rerun implications: The loom cache schema is version 4, so rerun the collection cell once to rebuild caches before running the new Section 2 cell.
+- Validation performed: Extended the synthetic processing contract, passed the loom helper tests, parsed and syntax-checked the notebook, and smoke-rendered split and pooled plots with unequal L/R trial counts.
+
+### 2026-08-04 - Support CLsemi loom episodes
+
+- Slice goal: Process `CLsemi###L/R` closed-loop loom events with the same semantics as existing `CLfull###L/R` events.
+- What changed: Shared loom-label parsing now recognizes both prefixes in trial extraction and multi-experiment filtering; the loom cache schema is version 3 so mixed recordings rebuild with the newly supported events.
+- Rerun implications: Rerun the loom data-collection cell once; existing loom caches rebuild automatically.
+- Validation performed: Added `CLfull`/`CLsemi` parsing and `CLsemi`-only processing tests, then ran the targeted helper test suite.
+
 ### 2026-07-24 - Sel1 versus Sel3 hi/lo loom-response plots
 
 - Slice goal: Compare hi and lo loom responses separately within Sel1 and Sel3 line families while excluding Sel1_GC.

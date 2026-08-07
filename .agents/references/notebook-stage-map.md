@@ -12,7 +12,7 @@ Use this file for tasks involving `Analyses/*.ipynb`, `DeprecatedAnalyses/Larsch
    - Purpose: load analysis outputs, run panel-specific statistics/plots, compose final figures.
 
 2. Current example analyses
-   - Entries: `Analyses/ShoalingSelectionAnalysis_2025_slim_clean.ipynb`, `Analyses/ShoalingSelectionAnalysis_2025History.ipynb`, `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb`, `Analyses/ShoalingNeighborhoodMaps_2026.ipynb`, `Analyses/ShoalingTrajectoryGrid_2026.ipynb`, `Analyses/ShoalingCarryoverRawASD_2026.ipynb`, `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb`, `Analyses/LoomingAnimalResponseAnalysis.ipynb`, `Analyses/LoomAnalysisCR.ipynb`, and `Analyses/size_data_analysis.ipynb`.
+   - Entries: `Analyses/ShoalingSelectionAnalysis_2025_slim_clean.ipynb`, `Analyses/ShoalingSelectionAnalysis_2025History.ipynb`, `Analyses/ShoalingSelection_2h_vs_4h_2026.ipynb`, `Analyses/ShoalingNeighborhoodMaps_2026.ipynb`, `Analyses/ShoalingTrajectoryGrid_2026.ipynb`, `Analyses/ShoalingCarryoverRawASD_2026.ipynb`, `Analyses/ShoalingQTLMappingAnalysis_2026.ipynb`, `Analyses/LoomingAnimalResponseAnalysis.ipynb`, `Analyses/LoomAnalysisCR.ipynb`, `Analyses/LoomAnalysis_QTL.ipynb`, and `Analyses/size_data_analysis.ipynb`.
    - Purpose: selection-shoaling analysis, current data exploration, neighborhood-map summaries, raw ASD/carryover checks, QTL/cFos examples, loom-response analysis, and size summaries.
 
 3. Helper-backed notebook work
@@ -20,9 +20,9 @@ Use this file for tasks involving `Analyses/*.ipynb`, `DeprecatedAnalyses/Larsch
    - Use helpers for repeated loading, statistics, vector fields, and plotting idioms.
 
 4. Looming animal-response analysis
-   - Entries: `Analyses/LoomingAnimalResponseAnalysis.ipynb` for one recording and `Analyses/LoomAnalysisCR.ipynb` for the metadata-selected multi-experiment cohort.
-   - Input: a raw primary-2026 animal trajectory file with embedded stimulus columns; the notebook derives closed-loop loom trials from episode labels beginning with `CLfull`.
-   - Purpose: inspect trial-specific orientation, raw linear/angular velocity, trial timing, post-loom maximum velocity, actual rotated trajectories, legacy center-distance traces, and baseline/response escape metrics.
+   - Entries: `Analyses/LoomingAnimalResponseAnalysis.ipynb` for one recording and `Analyses/LoomAnalysisCR.ipynb`/`Analyses/LoomAnalysis_QTL.ipynb` for metadata-selected multi-experiment cohorts.
+   - Input: a raw primary-2026 animal trajectory file with embedded stimulus columns; the notebook derives sided closed-loop trials from `CLfull###L/R` and `CLsemi###L/R`, while unsided `CLsemi###` blocks are split into trials at each positive-size pulse.
+   - Purpose: inspect trial-specific orientation, raw linear/angular velocity, trial timing, fish-level pre-loom mean and post-loom maximum velocity, actual rotated trajectories, legacy center-distance traces, and baseline/response escape metrics.
    - Legacy alignment: reusable extraction uses a fixed `epFrame=150` onset within each CL block, the legacy rotation convention, no L/R mirroring, and raw-coordinate baseline/response displacement metrics. The notebook owns the analysis settings and display composition; `functions/joh_loom_helpers.py` owns loading, trial parsing, extraction, and legacy metric semantics.
    - Multi-experiment semantics: `LoomAnalysisCR.ipynb` selects experiments dynamically from `MetaData_CR.xlsx`, reduces each recording before combining experiments, aligns repeats with a one-based condition-trial index, and treats experiments as equally weighted replicates. Its global plot switch selects either exact pooled-fish cache rows or experiment-level genotype summaries derived from `AllAn` animal IDs.
 
@@ -32,7 +32,7 @@ Use this file for tasks involving `Analyses/*.ipynb`, `DeprecatedAnalyses/Larsch
 - Saved plots from `functions/vector_field_analysis.py`, including vector-field and attraction/thigmotaxis images.
 - Downstream tables loaded from `*_siSummary_epi*.csv`, `*MapData.npy`, and size files.
 - Loom notebook outputs are in-memory figures/tables; no canonical output file or summary-writer stage is registered for `LoomingAnimalResponseAnalysis.ipynb`.
-- `LoomAnalysisCR.ipynb` writes notebook-specific per-experiment `csv.gz` caches and JSON settings sidecars under its configured `LoomAnalysisCR_temp_processing` directory; these are derived caches, not canonical pipeline outputs.
+- `LoomAnalysisCR.ipynb` and `LoomAnalysis_QTL.ipynb` write seven notebook-specific per-experiment `csv.gz` cache tables: five sided tables plus unsided fish-level response and maximum-velocity tables. JSON settings sidecars validate each derived cache set; these are not canonical pipeline outputs.
 
 ## Navigation notes
 
