@@ -1,5 +1,33 @@
 # Recent Changes - Notebook Figure Workflows
 
+### 2026-09-11 - QTL fish counts by selection line
+
+- Slice goal: Show both the available metadata fish and the date-filtered QTL fish used for each selection line in the QTL mapping notebook.
+- What changed: Added an unfiltered `line`/`n_fish` metadata summary and a second post-filter summary that counts each retained `animalIndex` once after applying `QTL_INCLUDE_FROM_DATE`.
+- Rerun implications: No analysis pipeline rerun or new output file is required; rerun the metadata-loading and summary cells against the accessible QTL metadata workbook.
+- Validation performed: Parsed the edited notebook JSON, checked code-cell syntax, exercised filtering, unique-fish counting, sorting, and total-row behavior with synthetic data, and verified the grouped total against the live `AllAn` sheet.
+
+### 2026-08-07 - Fish-level legacy response grid by QTL line set
+
+- Slice goal: Compare legacy response distance and response/baseline across every selected QTL metadata line set and all available sided loom sizes.
+- What changed: Added a dynamic row-per-line-set, two-metric grid to `LoomAnalysis_QTL.ipynb`; repeated L/R trials are averaged per fish before plotting individual fish values and genotype mean +/- SEM.
+- Rerun implications: No cache rebuild is required; rerun the notebook through response-metric loading, then run the new line-set grid cell.
+- Validation performed: Parsed and syntax-checked the notebook and smoke-rendered multi-line-set synthetic data in genotype-split and pooled modes, including unequal trials and a missing loom size.
+
+### 2026-08-07 - Inclusive QTL plot date filter
+
+- Slice goal: Let users restrict every QTL-derived plot to experiments on or after one editable date without changing processing inputs or imported selection comparison data.
+- What changed: Added `QTL_INCLUDE_FROM_DATE` to `ShoalingQTLMappingAnalysis_2026.ipynb` and applied it to the merged QTL summary before all plot tables are derived; `None` disables the filter, and invalid dates or empty results fail clearly.
+- Rerun implications: No processing rerun is required; rerun the settings and summary-loading cells, then rerun the desired plots.
+- Validation performed: Parsed and syntax-checked the notebook, exercised inclusive, disabled, invalid-date, and empty-result cases with synthetic data, and checked that imported selection rows remain unfiltered.
+
+### 2026-08-07 - Switchable Loom QTL experiment or line-set comparisons
+
+- Slice goal: Let all fish-level across-experiment Loom QTL plots, including unsided `CLsemi030` summaries, pool experiments from the same metadata line set.
+- What changed: Added an editable comparison-group selector at the top of each affected `LoomAnalysis_QTL.ipynb` plot cell; `experiment` preserves the existing display and `line_set` pools fish by one validated metadata line-set label while retaining genotype splits and fish-level SD bars.
+- Rerun implications: No cache rebuild is required; rerun the desired comparison plot cell after changing that cell's selector. The unsided maximum-velocity and pre/post cells still require the preceding unsided response cell to define the shared summary plotting helper.
+- Validation performed: Parsed and syntax-checked notebook cells, exercised both grouping modes with synthetic fish-level data, and smoke-rendered the two comparison plots.
+
 ### 2026-08-06 - Unsided pre/post loom velocity plots
 
 - Slice goal: Show individual `CLsemi030` trial maxima in one selectable experiment and compare fish-level pre-loom mean speed with post-loom maximum speed across experiments.
