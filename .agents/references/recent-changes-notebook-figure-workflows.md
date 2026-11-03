@@ -1,5 +1,23 @@
 # Recent Changes - Notebook Figure Workflows
 
+### 2026-10-23 - Make the invalid-trajectory threshold check setting-independent
+
+- What changed: Replaced the QTL QC cell's hard-coded 0.009/0.01/0.011 cutoff assertion with values immediately below, equal to, and above the active `INVALID_TRAJECTORY_SAMPLE_PROPORTION_THRESHOLD`. User-selected valid cutoffs, including 0.001 and the boundary values 0 and 1, now pass the notebook's inclusive-comparison self-check without changing flagging behavior.
+- Rerun implications: Rerun the QC-threshold cell and downstream tables/figures; trajectory metrics and caches do not need recomputation. No NAS outputs were written.
+- Validation performed: Compiled all notebook code cells and executed the threshold cell's checks at 0, 0.001, 0.01, and 1. Existing dish-use tests passed.
+
+### 2026-10-23 - Use a fixed invalid-trajectory QC cutoff
+
+- What changed: `QTLQualityControl.ipynb` now exposes `INVALID_TRAJECTORY_SAMPLE_PROPORTION_THRESHOLD = 0.01` and inclusively flags invalid trajectory-sample proportions at or above that raw cutoff. Removed the invalid metric's zMAD column, upper-tail configuration/helper branch, and tail-specific assertions; the other five metrics retain two-sided zMAD flags. The reference export records one fixed-cutoff row with `flagging_method`, and invalid-trajectory plots show the same fixed line in global and selection-family modes.
+- Rerun implications: Restart and rerun from Settings through the end to refresh QC flags, reference/flagged CSV schemas, summaries, and figures. Matching trajectory caches remain reusable; no raw trajectories, caches, or NAS outputs were written during this change.
+- Validation performed: Parsed the notebook and compiled all 15 code cells. Synthetic checks accepted thresholds 0, 0.01, and 1; rejected missing, nonfinite, out-of-range, and nonnumeric values; verified inclusive raw flags and missingness, absence of invalid-proportion zMAD/tail artifacts, preserved two-sided zMAD outputs for the other five metrics, fixed-reference schema, flagged-column selection, final SI overlays, and exactly one fixed cutoff per invalid-trajectory panel under both threshold modes. Existing dish-use tests also passed.
+
+### 2026-10-23 - Add invalid-trajectory proportion to QTL QC
+
+- What changed: Added `trajectory_invalid_sample_proportion = 1 - trajectory_valid_samples / requested_trajectory_samples` as the sixth QTL QC metric. Requested samples follow the selected start-inclusive/stop-exclusive segments and trajectory stride, so truncated tails count as invalid; failed loads retain a missing value. The new metric uses upper-tail-only zMAD screening and participates in QC tables, reasons, summaries, plots, correlations, SI overlays, and exports. Existing metrics remain two-sided, and trajectory cache names and arrays are unchanged.
+- Rerun implications: Restart and rerun `Analyses/QTLmapping/QTLQualityControl.ipynb` from Settings through the end. Existing matching trajectory caches remain reusable; no raw-data or cache rebuild is required. Edited and downstream notebook outputs/execution counts were cleared, and no NAS outputs were written during this change.
+- Validation performed: Parsed the notebook JSON and compiled all 15 code cells. Synthetic checks covered fully valid, mixed invalid, fully invalid, out-of-bounds-sampling, cache-equivalent, valid-count overflow, and failed-load cases; inclusive upper/two-sided zMAD behavior; reference, coverage, line-summary, and review schemas; all six per-experiment and line/date metric figures; both correlation layouts; and final SI overlay/count placement. All final checks passed without repository artifacts or NAS access.
+
 ### 2026-10-12 - Correct QTL QC explanations and comments
 
 - What changed: Updated QTL QC Markdown, comments, and docstrings to match current window selection/sampling, summary aggregation and provenance, cache-or-ROI loading, threshold modes and zero-MAD handling, coverage/missingness, robust family plots, SI correlations, overlays, and experiment-animal counts. Executable code, settings, plot labels, schemas, cell IDs, metadata, execution counts, and saved outputs are preserved.
