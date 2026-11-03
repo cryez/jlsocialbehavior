@@ -437,8 +437,8 @@ class experiment(object):
             print(' ...done. Shape: ', self.rawTra.shape)
             #print(self.rawTra[1000:1004])
             self.expInfo.fillCompleteMeta(expDef,self.rawTra)               # correct and complete meta information
-            if self.expInfo.recomputeAnimalSize:
-                self.anSize = self.getAnimalSize()              # compute animal size if requested
+            if self.expInfo.recomputeAnimalSize == 1:
+                self.anSize = self.getAnimalSize(force_recompute=True)  # compute animal size if requested
 
             # self.load_animalShapeParameters()
             # generate one random shift list, specifying shift for each of the control runs for shifted IAD
@@ -868,9 +868,9 @@ class experiment(object):
             raise
         return 1
 
-    def getAnimalSize(self):
+    def getAnimalSize(self, force_recompute=False):
 
-        if self.expInfo.anSizeFile == -1:
+        if force_recompute or self.expInfo.anSizeFile == -1:
 
             anSize = getAnimalSizeFromVideo(currAvi=self.expInfo.aviPath,
                                             rawData=self.rawTra,

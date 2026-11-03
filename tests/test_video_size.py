@@ -5,6 +5,7 @@ from contextlib import ExitStack, redirect_stdout
 from pathlib import Path
 import subprocess
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
@@ -17,6 +18,7 @@ import functions.notebookHelper
 from functions import getAnimalSizeFromVideo as size_video
 from functions import getVideoProperties as video_properties
 from functions import video_functions as vf
+from models.experiment import experiment
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -232,6 +234,106 @@ class AnimalSizeSamplingTests(VideoTestCase):
         measurement.assert_called_once()
         np.testing.assert_array_equal(result, [12, 12])
         self.assertEqual(np.loadtxt(os.path.join(self.temp_dir, 'anSizeAll.csv')).shape, (2, 400))
+
+
+class AnimalSizeCacheTests(VideoTestCase):
+    def make_experiment(self, an_size_file):
+        instance = experiment.__new__(experiment)
+        instance.rawTra = object()
+        instance.expInfo = SimpleNamespace(
+            anSizeFile=an_size_file,
+            aviPath='video.avi',
+            numPairs=2,
+            roiPath='ROI.csv',
+            camHeight=105,
+            pxPmm=2,
+            trajectoryPath=os.path.join(self.temp_dir, 'trajectory.txt'),
+        )
+        return instance
+
+    def test_forced_recomputation_overwrites_canonical_cache(self):
+        canonical = os.path.join(self.temp_dir, 'trajectory_anSize.csv')
+        np.savetxt(canonical, [1, 2])
+        instance = self.make_experiment(canonical)
+        measure = self.patch('models.experiment.getAnimalSizeFromVideo',
+                             return_value=np.array([20, 40]))
+
+        result = instance.getAnimalSize(force_recompute=True)
+
+        measure.assert_called_once_with(currAvi='video.avi', rawData=instance.rawTra,
+                                        numPairs=2, roiPath='ROI.csv', camHeight=105)
+        np.testing.assert_array_equal(result, [10, 20])
+        np.testing.assert_array_equal(np.loadtxt(canonical), [10, 20])
+        self.assertEqual(instance.expInfo.anSizeFile, canonical)
+
+    def test_forced_recomputation_leaves_explicit_cache_untouched(self):
+        explicit = os.path.join(self.temp_dir, 'selected_size.csv')
+        canonical = os.path.join(self.temp_dir, 'trajectory_anSize.csv')
+        np.savetxt(explicit, [3, 4])
+        instance = self.make_experiment(explicit)
+        self.patch('models.experiment.getAnimalSizeFromVideo',
+                   return_value=np.array([20, 40]))
+
+        result = instance.getAnimalSize(force_recompute=True)
+
+        np.testing.assert_array_equal(result, [10, 20])
+        np.testing.assert_array_equal(np.loadtxt(explicit), [3, 4])
+        np.testing.assert_array_equal(np.loadtxt(canonical), [10, 20])
+        self.assertEqual(instance.expInfo.anSizeFile, canonical)
+
+    def test_measurement_failure_preserves_existing_canonical_cache(self):
+        canonical = os.path.join(self.temp_dir, 'trajectory_anSize.csv')
+        np.savetxt(canonical, [1, 2])
+        instance = self.make_experiment(canonical)
+        self.patch('models.experiment.getAnimalSizeFromVideo',
+                   side_effect=RuntimeError('measurement failed'))
+
+        with self.assertRaisesRegex(RuntimeError, 'measurement failed'):
+            instance.getAnimalSize(force_recompute=True)
+
+        np.testing.assert_array_equal(np.loadtxt(canonical), [1, 2])
+        self.assertEqual(instance.expInfo.anSizeFile, canonical)
+
+    def test_non_forced_call_loads_existing_cache(self):
+        existing = os.path.join(self.temp_dir, 'selected_size.csv')
+        np.savetxt(existing, [3, 4])
+        instance = self.make_experiment(existing)
+        measure = self.patch('models.experiment.getAnimalSizeFromVideo')
+
+        result = instance.getAnimalSize()
+
+        np.testing.assert_array_equal(result, [3, 4])
+        measure.assert_not_called()
+        self.assertEqual(instance.expInfo.anSizeFile, existing)
+
+    def test_constructor_forces_recomputation_only_for_flag_one(self):
+        meta = SimpleNamespace(
+            recomputeAnimalSize=1,
+            episodeDur=5,
+            fps=30,
+            minShift=1800,
+            nShiftRuns=2,
+            fillCompleteMeta=mock.Mock(),
+        )
+        self.patch('models.experiment.ExperimentMeta', return_value=meta)
+        self.patch('models.experiment.experiment.loadData',
+                   return_value=(np.zeros((2, 1, 2)), np.zeros(2)))
+        get_size = self.patch('models.experiment.experiment.getAnimalSize',
+                              return_value=np.array([10]))
+        self.patch('models.experiment.experiment.linkFullAnimals')
+        self.patch('models.experiment.experiment.linkFullPairs')
+        self.patch('models.experiment.experiment.splitToPairs')
+        self.patch('models.experiment.experiment.saveExpData')
+
+        recomputed = experiment(pd.Series({'input': 1}))
+        get_size.assert_called_once_with(force_recompute=True)
+        np.testing.assert_array_equal(recomputed.anSize, [10])
+
+        get_size.reset_mock()
+        meta.recomputeAnimalSize = 0
+        cached = experiment(pd.Series({'input': 1}))
+        get_size.assert_not_called()
+        self.assertIsNone(cached.anSize)
 
 
 class VideoPropertiesTests(VideoTestCase):
