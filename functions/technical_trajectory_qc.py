@@ -548,10 +548,8 @@ def plot_technical_qc_distributions(
     return fig, axes
 
 
-def plot_si_with_standard_and_technical_flags(
+def plot_si_with_technical_flags(
     data,
-    qc_metrics,
-    qc_markers,
     technical_metrics,
     experiment_order,
     add_plot_positions,
@@ -561,7 +559,7 @@ def plot_si_with_standard_and_technical_flags(
     figure_height,
     final_si_y_limits=None,
 ):
-    """Plot SI with unchanged standard flags and independent technical overlays."""
+    """Plot SI with independent full-frame technical-QC overlays."""
     order = experiment_order(data)
     positioned = add_plot_positions(data, order)
     complete_si = positioned.loc[positioned["si"].notna()].copy()
@@ -590,19 +588,6 @@ def plot_si_with_standard_and_technical_flags(
         ax=ax,
     )
 
-    for metric_name, metric_info in qc_metrics.items():
-        marker, marker_size = qc_markers[metric_name]
-        metric_rows = complete_si.loc[complete_si[f"{metric_name}_outlier_flag"]]
-        ax.scatter(
-            metric_rows["_plot_x"],
-            metric_rows["si"],
-            s=marker_size,
-            marker=marker,
-            facecolors="none",
-            edgecolors=metric_info["color"],
-            linewidths=1.5,
-            zorder=5,
-        )
     for metric_name, metric_info in technical_metrics.items():
         metric_rows = complete_si.loc[complete_si[f"{metric_name}_technical_flag"]]
         ax.scatter(
@@ -616,25 +601,14 @@ def plot_si_with_standard_and_technical_flags(
             zorder=6,
         )
 
-    size_missing = complete_si.loc[complete_si["animal_size_missing_flag"]]
-    ax.scatter(
-        size_missing["_plot_x"],
-        size_missing["si"],
-        s=132,
-        marker="X",
-        color="#7A3D00",
-        linewidths=1.2,
-        zorder=7,
-    )
     for x_position, experiment_label in enumerate(order):
         experiment_data = data.loc[data["experiment_label"].eq(experiment_label)]
         annotations = [
-            (1.24, f'qc={int(experiment_data["qc_outlier_flag"].sum())}', summary_color, True),
-            (1.205, f'tech={int(experiment_data["technical_qc_flag"].sum())}', "#4D004B", True),
+            (1.20, f'tech={int(experiment_data["technical_qc_flag"].sum())}', "#4D004B", True),
         ]
         annotations.extend(
             (
-                1.17 - 0.035 * index,
+                1.165 - 0.035 * index,
                 f'{info["abbreviation"]}='
                 f'{int(experiment_data[f"{name}_technical_flag"].sum())}',
                 info["color"],
@@ -662,15 +636,6 @@ def plot_si_with_standard_and_technical_flags(
             label="all fish", markersize=7,
         )
     ]
-    for metric_name, metric_info in qc_metrics.items():
-        marker, _ = qc_markers[metric_name]
-        legend_handles.append(
-            Line2D(
-                [0], [0], marker=marker, linestyle="none", markerfacecolor="none",
-                markeredgecolor=metric_info["color"], markeredgewidth=1.5,
-                label=metric_info["label"], markersize=8,
-            )
-        )
     for metric_info in technical_metrics.values():
         legend_handles.append(
             Line2D(
@@ -680,13 +645,6 @@ def plot_si_with_standard_and_technical_flags(
                 label=metric_info["label"] + " (technical)", markersize=9,
             )
         )
-    legend_handles.append(
-        Line2D(
-            [0], [0], marker="X", linestyle="none",
-            markerfacecolor="#7A3D00", markeredgecolor="#7A3D00",
-            label="Animal size missing", markersize=8,
-        )
-    )
 
     ax.axhline(0, color="0.35", linestyle=":", linewidth=1)
     ax.set_xlabel("Experiment")
@@ -696,14 +654,14 @@ def plot_si_with_standard_and_technical_flags(
         ax.set_ylim(*y_limits)
         below = np.isfinite(complete_si["si"]) & complete_si["si"].lt(y_limits[0])
         above = np.isfinite(complete_si["si"]) & complete_si["si"].gt(y_limits[1])
-        combined_review = complete_si["qc_review_flag"] | complete_si["technical_qc_flag"]
+        technical_review = complete_si["technical_qc_flag"]
         ax.text(
             0.02,
             0.98,
             f"Hidden below: {int(below.sum())} points "
-            f"({int((below & combined_review).sum())} review flagged)\n"
+            f"({int((below & technical_review).sum())} technical-QC flagged)\n"
             f"Hidden above: {int(above.sum())} points "
-            f"({int((above & combined_review).sum())} review flagged)",
+            f"({int((above & technical_review).sum())} technical-QC flagged)",
             transform=ax.transAxes,
             ha="left",
             va="top",
@@ -711,8 +669,8 @@ def plot_si_with_standard_and_technical_flags(
             bbox={"facecolor": "white", "alpha": 0.85, "edgecolor": "none"},
         )
     ax.set_title(
-        "Shoaling index with standard and full-frame technical QC flags",
-        y=1.30,
+        "Shoaling index with full-frame technical QC flags",
+        y=1.26,
         pad=0,
     )
     ax.tick_params(axis="x", rotation=90)

@@ -30,6 +30,7 @@ Use this file before changing filenames, columns, array shapes, cache behavior, 
 - Notebook-generated figures are owned by the notebook stage unless the repeated plot logic lives in `functions/`.
 - `legacy/functions/vector_field_analysis.py` writes named PNG outputs for vector-field, thigmotaxis, and attraction analyses.
 - `Analyses/Dish-useAnalysis.ipynb` owns `occupancy_heatmap_grid_<folder>_<window>` PNG/PDF figures, `_metrics.csv`, and `_dish_evenness.csv`, plus `individual_dish_evenness_distribution_<folder>_<window>` PNG/PDF figures and `_dish_evenness_distribution.csv`. Bin-count columns remain `reachable_bin_count` and `visited_reachable_bin_count`. Its notebook-specific `.npz` trajectory caches write `dish_radius_mm`; readers also accept legacy `arena_radius_mm`, preferring the current field. Existing cache names and files are preserved. QTL QC retains its own cache schema and `spaceEvenness`/`trajectory_valid_samples` table columns, and adds `trajectory_invalid_sample_proportion` to its QC tables without changing cached arrays.
+- `Analyses/QTLmapping/QTLRecordingQC.ipynb` owns `qtl_technical_qc_metrics.csv`, `qtl_technical_qc_flagged.csv`, `qtl_technical_qc_metrics_by_experiment` PNG/PDF, and `qtl_recording_qc_si_by_experiment_with_technical_flags` PNG/PDF outputs. `functions/technical_trajectory_qc.py` owns the independent hashed `technical_qc_*.npz` cache schema. The SI review figure contains technical-QC overlays only.
 
 ## Video and preprocessing outputs
 

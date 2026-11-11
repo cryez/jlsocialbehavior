@@ -8,7 +8,7 @@ Use this file when repo authority is unclear or a task touches legacy/migration 
 
 - This is a Python 3.6-era scientific analysis repository with notebooks, reusable modules, wrappers, GUI tools, and historical paper reproduction assets.
 - `readme.md` describes the historical Larsch and Baier 2018 analysis workflow and raw data source.
-- Seven active notebooks remain under `Analyses/Selection/`, `Analyses/QTLmapping/`, and `Analyses/Dish-useAnalysis.ipynb`; see `repository-layout.md` for the exact set.
+- Eight active notebooks remain under `Analyses/Selection/`, `Analyses/QTLmapping/`, and `Analyses/Dish-useAnalysis.ipynb`; see `repository-layout.md` for the exact set.
 - `legacy/` consolidates inactive notebooks, historical collections, standalone scripts, and their exclusive helpers. Its move manifest records 149 relocations and original hashes.
 - `scripts/sync_coding_doc.py` remains repository maintenance tooling; other operational scripts are archived.
 - `.agents/` now provides routing and handoff docs; `coding.md` is the baseline coding behavior file.

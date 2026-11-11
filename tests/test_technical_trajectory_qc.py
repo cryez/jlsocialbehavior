@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -9,6 +10,7 @@ from functions.technical_trajectory_qc import (
     TechnicalTrajectoryAccumulator,
     add_technical_qc_flags,
     analyze_trajectory_file_cached,
+    plot_si_with_technical_flags,
     technical_cache_path,
 )
 
@@ -117,6 +119,84 @@ class TechnicalTrajectoryQCTests(unittest.TestCase):
             flagged["test_technical_flag"].tolist(),
             [False, False, True],
         )
+
+    def test_si_plot_uses_only_technical_qc_flags(self):
+        data = pd.DataFrame(
+            {
+                "experiment_label": ["experiment-a"] * 4,
+                "si": [-1.5, -0.2, 0.3, 1.5],
+                "missing_position_technical_flag": [True, False, False, False],
+                "outside_dish_technical_flag": [False, True, False, False],
+                "implausible_jump_technical_flag": [False, False, False, True],
+                "technical_qc_flag": [True, True, False, True],
+            }
+        )
+        technical_metrics = {
+            "missing_position": {
+                "label": "Missing-position fraction",
+                "color": "#B2182B",
+                "marker": "X",
+                "marker_size": 150,
+                "abbreviation": "missing",
+            },
+            "outside_dish": {
+                "label": "Outside-dish fraction",
+                "color": "#EF8A62",
+                "marker": "P",
+                "marker_size": 170,
+                "abbreviation": "outside",
+            },
+            "implausible_jump": {
+                "label": "Implausible-jump fraction",
+                "color": "#762A83",
+                "marker": "*",
+                "marker_size": 205,
+                "abbreviation": "jump",
+            },
+        }
+
+        def add_plot_positions(frame, order):
+            positioned = frame.copy()
+            positioned["_plot_x"] = np.linspace(-0.12, 0.12, len(positioned))
+            return positioned
+
+        figure, axis = plot_si_with_technical_flags(
+            data=data,
+            technical_metrics=technical_metrics,
+            experiment_order=lambda frame: ["experiment-a"],
+            add_plot_positions=add_plot_positions,
+            unflagged_color="#808080",
+            summary_color="#202020",
+            figure_dpi=72,
+            figure_height=5,
+            final_si_y_limits=(-1, 1),
+        )
+        try:
+            figure.canvas.draw()
+            self.assertEqual(
+                axis.get_title(),
+                "Shoaling index with full-frame technical QC flags",
+            )
+            self.assertEqual(
+                [text.get_text() for text in axis.get_legend().get_texts()],
+                [
+                    "all fish",
+                    "Missing-position fraction (technical)",
+                    "Outside-dish fraction (technical)",
+                    "Implausible-jump fraction (technical)",
+                ],
+            )
+            annotations = "\n".join(text.get_text() for text in axis.texts)
+            self.assertIn("tech=3", annotations)
+            self.assertIn("missing=1", annotations)
+            self.assertIn("outside=1", annotations)
+            self.assertIn("jump=1", annotations)
+            self.assertIn("Hidden below: 1 points (1 technical-QC flagged)", annotations)
+            self.assertIn("Hidden above: 1 points (1 technical-QC flagged)", annotations)
+            self.assertNotIn("qc=", annotations.casefold())
+            self.assertNotIn("review", annotations.casefold())
+        finally:
+            plt.close(figure)
 
     def test_cache_round_trip_and_jump_setting_key(self):
         repository_root = Path(__file__).resolve().parents[1]

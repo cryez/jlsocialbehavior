@@ -1,5 +1,30 @@
 # Recent Changes - Notebook Figure Workflows
 
+### 2026-11-10 - Add unflagged fish to QTL QC summary
+
+- What changed: Added a `Unique unflagged fish` column to the final per-line QTL QC table. It counts experiment-animal samples with neither a QC outlier nor missing animal size, complementing the existing flagged count.
+- Rerun implications: Rerun the final summary cell to refresh the displayed table; upstream QC data and exports do not need recomputation.
+- Validation performed: Parsed the notebook JSON, compiled the edited code cell, and checked that synthetic flagged/unflagged examples produce complementary counts.
+
+### 2026-11-05 - Make QTL recording QC self-contained
+
+- What changed: Added repository discovery, matching QTL cohort/window settings, summary and trajectory-selection loading, ROI scale resolution, and plotting helpers to `QTLRecordingQC.ipynb`. Technical flags now merge directly onto `summary_samples`, without running fish-level QC flagging.
+- Rerun implications: The notebook can now start from its first cell and will read the configured processing settings, metadata, selected summaries, and raw trajectories when executed. Its existing technical cache, CSV, and figure settings remain in effect.
+- Validation performed: Parsed notebook JSON, checked unique cell IDs and code-cell compilation, and verified that the technical analysis and plot inputs resolve from earlier cells. No NAS files, recordings, caches, CSVs, or figures were read or written.
+
+### 2026-11-05 - Restrict the recording-QC SI plot to technical flags
+
+- What changed: Renamed the recording-QC SI helper and removed the six fish-level QC overlays, animal-size marker, standard-QC counts, and standard review-flag dependency. The plot now shows only base SI summaries and the three full-frame technical flags, and writes `qtl_recording_qc_si_by_experiment_with_technical_flags` PNG/PDF outputs.
+- Rerun implications: Rerun the figure cell to create the renamed SI figure. Technical metrics, caches, CSV outputs, and SI sample membership are unchanged; existing old-named figure files are not removed.
+- Validation performed: All seven technical-trajectory unit tests passed, including a rendered-plot contract built without standard-QC columns. The notebook parsed as JSON with unique cell IDs, all code cells compiled, and active targets contained no stale mixed-helper or old output-name references.
+
+### 2026-11-03 - Move full-frame technical QC to QTLRecordingQC
+
+- Slice goal: Separate recording and trajectory diagnostics from fish-specific QTL quality control.
+- What changed: Added `Analyses/QTLmapping/QTLRecordingQC.ipynb` with purpose text describing its intended whole-experiment recording/video QC scope, then moved the former Section 11 full-frame technical analysis cells out of `QTLQualityControl.ipynb` without changing their settings, computations, plots, or output names. The opening text records that the initial migration still uses prepared QTL QC inputs and per-fish diagnostics; experiment aggregation and video checks remain future work. Registered the eighth active notebook, helper ownership, and output ownership in the routing references.
+- Rerun implications: No metric or cache recomputation is required solely because of the move. The migrated cells currently require the prepared inputs documented in the new notebook before they can be run independently.
+- Validation performed: Parsed both notebooks as JSON, checked unique cell IDs and the absence of technical-QC cells from `QTLQualityControl.ipynb`, compared the two migrated code-cell sources with their pre-move versions, and compiled all notebook code cells. No raw recordings, NAS data, caches, figures, or CSV exports were accessed or written.
+
 ### 2026-10-23 - Make the invalid-trajectory threshold check setting-independent
 
 - What changed: Replaced the QTL QC cell's hard-coded 0.009/0.01/0.011 cutoff assertion with values immediately below, equal to, and above the active `INVALID_TRAJECTORY_SAMPLE_PROPORTION_THRESHOLD`. User-selected valid cutoffs, including 0.001 and the boundary values 0 and 1, now pass the notebook's inclusive-comparison self-check without changing flagging behavior.

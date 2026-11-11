@@ -24,6 +24,7 @@ Use this file when choosing the narrowest code owner before editing.
 ## Functions
 
 - `functions.dish_use.analyze_dish_use`: fixed expected-dish sampled-frame count grids, probability distributions, normalized Shannon evenness, and coverage diagnostics from centered trajectories; takes `xy_mm`, `dish_radius_mm`, and `grid_side_length` (cells per axis). Returns `dishUseResult` with `dish_bin_count` and per-fish `visited_bin_count`; used by dish-use analysis and QTL QC. Replaces the removed arena-use API.
+- `functions.technical_trajectory_qc`: full-frame missing-position, outside-dish, and implausible-jump counts/fractions; owns technical-QC cache keys, per-fish flagging, and plots used by `Analyses/QTLmapping/QTLRecordingQC.ipynb`.
 - `functions.notebookHelper.readExperiment`: notebook-facing experiment loading helper.
 - `functions.notebookHelper.savedCsvToDf`: aggregation of saved summary CSVs.
 - `functions.notebookHelper.computeExpTimeOfDay`, `cohend`, `groupCohen`, `groupPower`: notebook statistics/time helpers.

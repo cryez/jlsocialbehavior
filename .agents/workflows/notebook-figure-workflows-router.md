@@ -26,7 +26,7 @@ Use this file when a task targets notebooks in `Analyses/` or `legacy/Deprecated
 | QTL, cFos, or selection analysis notebook changes | `notebook-stage-map.md` | `Analyses/*.ipynb` plus helper modules |
 | Notebook refactor | `refactor-rules.md` | extract reusable logic to modules; keep notebook orchestration-thin |
 
-The active set has seven notebooks; consult `repository-layout.md` for exact paths. `legacy/Analyses/old/`, `legacy/Analyses/others/`, and `legacy/DeprecatedAnalyses/` are inactive collections.
+The active set has eight notebooks; consult `repository-layout.md` for exact paths. `legacy/Analyses/old/`, `legacy/Analyses/others/`, and `legacy/DeprecatedAnalyses/` are inactive collections.
 
 ## Ownership guidance
 

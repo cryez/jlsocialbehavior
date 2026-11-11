@@ -9,6 +9,7 @@ Use this reference for active/legacy classification, file movement, or restoring
 - `Analyses/Selection/LoomAnalysisCR.ipynb`
 - `Analyses/QTLmapping/ShoalingQTLMappingAnalysis_2026.ipynb`
 - `Analyses/QTLmapping/QTLQualityControl.ipynb`
+- `Analyses/QTLmapping/QTLRecordingQC.ipynb`
 - `Analyses/QTLmapping/LoomAnalysis_QTL.ipynb`
 - `Analyses/Dish-useAnalysis.ipynb`
 
